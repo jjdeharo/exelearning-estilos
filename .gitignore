@@ -8,3 +8,6 @@ __pycache__/
 dist/
 /exelearning-style-consola-*.zip
 /consola.zip
+
+# Los paquetes que publica la web (pages.yml)
+*/descargas/

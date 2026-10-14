@@ -1,0 +1,54 @@
+name: Publicar la web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    name: Paquetes de cada estilo y web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      # Cada carpeta con theme/config.xml es un estilo: se empaqueta, se comprueba
+      # y sus paquetes se publican en <estilo>/descargas/.
+      - name: Empaquetar y comprobar los estilos
+        run: |
+          for config in */theme/config.xml; do
+            estilo="$(dirname "$(dirname "$config")")"
+            echo "== $estilo"
+            (cd "$estilo" && python3 scripts/empaquetar.py && python3 scripts/comprobar.py)
+            mkdir -p "$estilo/descargas"
+            cp "$estilo"/dist/* "$estilo/descargas/"
+            rm -rf "$estilo/dist"
+          done
+          rm -rf .git .github
+
+      - name: Preparar la web
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  publicar:
+    name: Publicar en GitHub Pages
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Publicar
+        id: despliegue
+        uses: actions/deploy-pages@v4

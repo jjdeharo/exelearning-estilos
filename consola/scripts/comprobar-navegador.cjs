@@ -2,7 +2,7 @@
 // Recorre el ejemplo publicado en un navegador y comprueba el estilo y las actividades.
 // Usa el Playwright instalado de forma global o el de eXeLearning:
 //   NODE_PATH=$(npm root -g) node scripts/comprobar-navegador.cjs [url] [navegador]
-// Con CAPTURA=theme/screenshot.png,screenshot.png,.github/screenshot.png guarda además
+// Con CAPTURA=theme/screenshot.png,screenshot.png,captura.png guarda además
 // la miniatura del estilo (1200 × 700).
 const assert = require('node:assert/strict');
 const playwright = require('playwright');

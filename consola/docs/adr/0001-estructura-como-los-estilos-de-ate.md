@@ -11,7 +11,7 @@ Juan José de Haro quería un estilo «como los de Ernesto», los estilos de eXe
 
 Seguir la misma estructura que `ateeducacion/exelearning-style-teletext` (consultado en su versión 1.0.0 del 13-10-2026): `theme/` con el estilo, la raíz con el ejemplo, un script de empaquetado, comprobaciones estáticas y en el navegador, y el enlace «Editar en eXeLearning» fuera del estilo. Los scripts son propios, en castellano, inspirados en los suyos (CC0).
 
-El nombre del repositorio, `exelearning-style-consola`, sigue su convención, con el nombre del estilo en castellano.
+Al principio fue un repositorio propio, `exelearning-style-consola`, con su convención de nombres. El mismo día pasó a ser la carpeta `consola/` del repositorio `exelearning-estilos`, que reúne todos los estilos de su autor (ver el ADR 1 de ese repositorio). Dentro de la carpeta se mantiene la misma organización.
 
 ## Alternativas descartadas
 
