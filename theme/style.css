@@ -1,0 +1,1369 @@
+/*!
+ * Consola — estilo de eXeLearning
+ * -------------------------------
+ * El recurso como una terminal de Linux: la paleta Tango de GNOME Terminal,
+ * DejaVu Sans Mono, el índice como la salida de «tree», el prompt de bash al
+ * abrir cada página y una barra de estado como la de tmux.
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * Juan José de Haro (@jjdeharo), 2026.
+ * DejaVu Sans Mono: licencia de Bitstream Vera y dominio público (fonts/LICENSE.txt).
+ * Iconos: Material Symbols de Google, del estilo Zen de eXeLearning,
+ * Apache License 2.0 (icons/LICENSE.txt).
+ */
+
+@font-face {
+    font-family: "DejaVu Sans Mono";
+    src: url(fonts/dejavu-sans-mono.woff2) format("woff2");
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "DejaVu Sans Mono";
+    src: url(fonts/dejavu-sans-mono-bold.woff2) format("woff2");
+    font-weight: 700;
+    font-display: swap;
+}
+
+/* Paleta Tango, la de GNOME Terminal; el fondo, casi negro. */
+:root {
+    --cli-fondo: #1d1f21;
+    --cli-fondo-panel: #17191a;
+    --cli-fondo-oscuro: #0f1011;
+    --cli-escritorio: #3a3d3f;
+    --cli-marco: #2b2e30;
+    --cli-texto: #d3d7cf;
+    --cli-brillante: #eeeeec;
+    --cli-apagado: #959791;
+    --cli-linea: #4a4e50;
+    --cli-rojo: #ef2929;
+    /* Para texto rojo sobre el fondo: el de Tango no llega a 4,5:1. */
+    --cli-rojo-texto: #ff7070;
+    --cli-verde: #8ae234;
+    --cli-verde-oscuro: #4e9a06;
+    --cli-amarillo: #fce94f;
+    --cli-azul: #729fcf;
+    --cli-magenta: #ad7fa8;
+    --cli-cian: #34e2e2;
+    --cli-letra: "DejaVu Sans Mono", "Liberation Mono", "Ubuntu Mono", Menlo, Consolas, monospace;
+}
+
+/* ---------- Contenido: exportación y editor ---------- */
+
+.exe-content,
+body#tinymce {
+    --bs-body-color: #d3d7cf;
+    --bs-body-bg: #1d1f21;
+    --bs-body-font-family: var(--cli-letra);
+    --bs-link-color: #729fcf;
+    --bs-link-color-rgb: 114, 159, 207;
+    --bs-link-hover-color: #1d1f21;
+    --bs-link-hover-color-rgb: 29, 31, 33;
+    --bs-border-color: #4a4e50;
+    --bs-border-radius: 0;
+    --exe-fx-focus-color: #fce94f;
+    color-scheme: dark;
+    background: var(--cli-fondo);
+    color: var(--cli-texto);
+    font-family: var(--cli-letra);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+body.exe-export {
+    margin: 0;
+    background: var(--cli-fondo);
+    color: var(--cli-texto);
+    font-family: var(--cli-letra);
+}
+
+.exe-content p,
+.exe-content li {
+    margin: 0 0 .8em;
+}
+
+.exe-content strong,
+.exe-content b,
+body#tinymce strong {
+    color: var(--cli-brillante);
+    font-weight: 700;
+}
+
+.exe-content em,
+body#tinymce em {
+    color: var(--cli-brillante);
+}
+
+.exe-content a,
+body#tinymce a {
+    color: var(--cli-azul);
+    text-decoration: underline;
+    text-underline-offset: .2em;
+}
+
+.exe-content a:hover {
+    background: var(--cli-azul);
+    color: var(--cli-fondo);
+    text-decoration: none;
+}
+
+.exe-content :focus-visible,
+.cli-barra :focus-visible,
+.cli-arbol :focus-visible {
+    outline: .125rem solid var(--cli-amarillo);
+    outline-offset: .125rem;
+    box-shadow: none;
+}
+
+.exe-content h2,
+.exe-content h3,
+.exe-content h4,
+.exe-content h5,
+.exe-content h6 {
+    margin: 1.25em 0 .5em;
+    font-family: var(--cli-letra);
+    font-size: 1em;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.exe-content h2 { color: var(--cli-amarillo); }
+.exe-content h3 { color: var(--cli-cian); }
+.exe-content :is(h4, h5, h6) { color: var(--cli-magenta); }
+
+.exe-content ul {
+    padding-left: 2ch;
+    list-style: none;
+}
+
+/* Viñetas de texto: «-» como en un archivo de texto o en Markdown. */
+.exe-content ul > li::before {
+    content: "- ";
+    margin-left: -2ch;
+    color: var(--cli-verde);
+}
+
+.exe-content ol {
+    padding-left: 3ch;
+}
+
+.exe-content ol > li::marker {
+    color: var(--cli-verde);
+}
+
+.exe-content mark {
+    padding: 0 .2ch;
+    background: var(--cli-amarillo);
+    color: var(--cli-fondo);
+}
+
+.exe-content hr {
+    margin: 1.5em 0;
+    border: 0;
+    border-top: .0625rem dashed var(--cli-linea);
+    opacity: 1;
+}
+
+.exe-content blockquote {
+    margin: 1em 0;
+    padding: .25em 0 .25em 2ch;
+    border-left: .1875rem solid var(--cli-magenta);
+}
+
+.exe-content code,
+body#tinymce code {
+    padding: 0 .3ch;
+    background: var(--cli-fondo-oscuro);
+    color: var(--cli-amarillo);
+    font-family: var(--cli-letra);
+    font-size: 1em;
+}
+
+.exe-content pre,
+body#tinymce pre {
+    overflow-x: auto;
+    margin: 0 0 1em;
+    padding: .75em 2ch;
+    border-left: .1875rem solid var(--cli-verde-oscuro);
+    background: var(--cli-fondo-oscuro);
+    color: var(--cli-texto);
+    font-family: var(--cli-letra);
+    font-size: .9375em;
+    line-height: 1.35;
+}
+
+.exe-content pre code {
+    padding: 0;
+    background: none;
+    color: inherit;
+}
+
+.exe-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.exe-content figure {
+    margin: .25em 0 1em;
+}
+
+.exe-content figcaption {
+    margin-top: .4em;
+    color: var(--cli-apagado);
+    font-size: .875em;
+}
+
+/* Pie de figura como un comentario de la shell. */
+.exe-content figcaption::before {
+    content: "# ";
+}
+
+.exe-content .clearfix {
+    clear: both;
+}
+
+/* Fórmulas: las de MathJax, ya dibujadas al exportar, toman el color del texto. */
+.exe-content .exe-math-rendered,
+.exe-content mjx-container {
+    color: var(--cli-brillante);
+}
+
+/* El MathML oculto, para los lectores de pantalla, se coloca respecto a su fórmula:
+   dentro de una tabla desplazable no ensancha la página. */
+.exe-content .exe-math-rendered {
+    position: relative;
+}
+
+/* WebKit no aplica el ancho de 1 px a <math>: se recorta para que no ocupe sitio. */
+.exe-content .exe-math-rendered > math {
+    top: 0;
+    left: 0;
+    max-width: 1px;
+    max-height: 1px;
+    overflow: hidden;
+}
+
+.exe-content .exe-math-rendered[data-display="block"],
+.exe-content mjx-container[display="true"] {
+    display: block;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: .75em 0;
+    text-align: center;
+}
+
+/* Tablas: como la salida de «column -t», con líneas finas. */
+.exe-content table,
+.exe-content .exe-table {
+    width: auto;
+    max-width: 100%;
+    margin: 1em 0;
+    border: 0;
+    border-collapse: collapse;
+}
+
+.exe-content table tr,
+.exe-content table th,
+.exe-content table td,
+.exe-content .exe-table tr:nth-child(n) td,
+.exe-content .exe-table tbody tr:nth-child(n) th {
+    padding: .3em 2ch .3em 0;
+    border: 0;
+    border-bottom: .0625rem dashed var(--cli-linea);
+    background: none;
+    color: var(--cli-texto);
+    text-align: start;
+    vertical-align: top;
+}
+
+.exe-content table thead,
+.exe-content table thead tr {
+    background: none;
+}
+
+.exe-content table thead :is(th, td),
+.exe-content table th,
+.exe-content .exe-table tbody tr:nth-child(n) th {
+    border-bottom: .0625rem solid var(--cli-verde-oscuro);
+    color: var(--cli-verde);
+    font-weight: 700;
+}
+
+/* En el móvil, una tabla que no cabe se desplaza en horizontal sin ensanchar la página. */
+@media screen and (max-width: 47.99rem) {
+    .exe-content table,
+    .exe-content .exe-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+.exe-content table caption {
+    padding: 0 0 .4em;
+    color: var(--cli-apagado);
+    text-align: start;
+    caption-side: top;
+}
+
+/* Bloques de color de eXeLearning: una línea a la izquierda, como un aviso en la terminal. */
+.exe-content :is(.exe-block-info, .exe-block-warning, .exe-block-alert, .exe-block-danger, .exe-block-success) {
+    padding: .5em 2ch;
+    border: 0;
+    border-left: .1875rem solid var(--cli-azul);
+    border-radius: 0;
+    background: var(--cli-fondo-panel);
+    color: var(--cli-texto);
+}
+
+.exe-content :is(.exe-block-warning, .exe-block-alert) { border-left-color: var(--cli-amarillo); }
+.exe-content .exe-block-danger { border-left-color: var(--cli-rojo); }
+.exe-content .exe-block-success { border-left-color: var(--cli-verde); }
+
+/* ---------- Cajas de los iDevices ---------- */
+
+.exe-content .box {
+    position: relative;
+    margin: 0 0 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+}
+
+.exe-content .box-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1ch;
+    min-height: 0;
+    margin: 0 0 .6rem;
+    padding: 0 4ch 0 0;
+    border: 0;
+    background: none;
+}
+
+.exe-content .box-head .box-title {
+    margin: 0;
+    padding: 0;
+    color: var(--cli-verde);
+    font-family: var(--cli-letra);
+    font-size: 1.0625em;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.exe-content .box-icon {
+    display: flex;
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.exe-content .box-icon img,
+.exe-content .box-icon .exe-material-icon {
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 0;
+}
+
+.exe-content .box-icon .exe-material-icon {
+    background-color: currentColor;
+    -webkit-mask: var(--exe-material-icon-url) center / contain no-repeat;
+    mask: var(--exe-material-icon-url) center / contain no-repeat;
+}
+
+.exe-content .box-content {
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+/* Plegar y desplegar: «[-]» y «[+]». */
+.exe-content .box-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: 4ch;
+    height: 1.75rem;
+    margin-top: -.875rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--cli-apagado);
+    font: 1rem/1.75rem var(--cli-letra);
+    text-align: center;
+    cursor: pointer;
+}
+
+.exe-content .box-toggle:hover {
+    color: var(--cli-brillante);
+}
+
+.exe-content .box-toggle::before {
+    content: "[-]";
+}
+
+.exe-content .box.minimized .box-toggle::before {
+    content: "[+]";
+}
+
+.exe-content .box-toggle span,
+#packageLicense .license-label,
+.exe-content .sr-av {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+}
+
+/*
+ * Actividades: un marco de doble línea, como una ventana de «dialog», con el
+ * título sobre el borde. Cualquier caja puede pedirlo con la clase cli-marco.
+ */
+.exe-content .box:where(.cli-marco, :has(.idevice_node:not(.text, .download-source-file))) {
+    margin-top: 2.75rem;
+    padding: 1.25rem 2ch .5rem;
+    border: .1875rem double var(--cli-verde-oscuro);
+}
+
+.exe-content .box:where(.cli-marco, :has(.idevice_node:not(.text, .download-source-file))) > .box-head {
+    position: absolute;
+    top: -1em;
+    left: 1.5ch;
+    right: 1.5ch;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.exe-content .box:where(.cli-marco, :has(.idevice_node:not(.text, .download-source-file))) > .box-head > * {
+    pointer-events: auto;
+}
+
+.exe-content .box:where(.cli-marco, :has(.idevice_node:not(.text, .download-source-file))) > .box-head :is(.box-icon, .box-title) {
+    padding: 0 1ch;
+    background: var(--cli-fondo);
+}
+
+.exe-content .box:where(.cli-marco, :has(.idevice_node:not(.text, .download-source-file))) > .box-head .box-icon {
+    padding-right: 0;
+}
+
+.exe-content .box:where(.cli-marco, :has(.idevice_node:not(.text, .download-source-file))) > .box-head .box-icon + .box-title {
+    margin-left: -1ch;
+}
+
+.exe-content .box:where(.cli-marco, :has(.idevice_node:not(.text, .download-source-file))) > .box-head .box-toggle {
+    background: var(--cli-fondo);
+}
+
+.exe-content .box.no-header:where(.cli-marco, :has(.idevice_node:not(.text, .download-source-file))) {
+    margin-top: 2rem;
+    padding-top: .75rem;
+}
+
+/*
+ * Mensajes de arranque de systemd: «[  OK  ]», «[ INFO ]», «[ WARN ]» y «[FAILED]»
+ * delante del título, con una línea del mismo color a la izquierda del contenido.
+ * Se escriben en el campo «Clase CSS» de la caja: cli-ok, cli-info, cli-warn y cli-fail.
+ */
+.exe-content .box:is(.cli-ok, .cli-info, .cli-warn, .cli-fail) > .box-content {
+    padding-left: 2ch;
+    border-left: .1875rem solid var(--cli-aviso);
+}
+
+.exe-content .box.cli-ok { --cli-aviso: var(--cli-verde); --cli-etiqueta: "[  OK  ] "; }
+.exe-content .box.cli-info { --cli-aviso: var(--cli-azul); --cli-etiqueta: "[ INFO ] "; }
+.exe-content .box.cli-warn { --cli-aviso: var(--cli-amarillo); --cli-etiqueta: "[ WARN ] "; }
+.exe-content .box.cli-fail { --cli-aviso: var(--cli-rojo); --cli-etiqueta: "[FAILED] "; }
+
+.exe-content .box:is(.cli-ok, .cli-info, .cli-warn, .cli-fail) > .box-head .box-title {
+    color: var(--cli-brillante);
+}
+
+.exe-content .box:is(.cli-ok, .cli-info, .cli-warn, .cli-fail) > .box-head .box-title::before {
+    content: var(--cli-etiqueta);
+    color: var(--cli-aviso);
+    white-space: pre;
+}
+
+.exe-content .box.cli-marco:is(.cli-ok, .cli-info, .cli-warn, .cli-fail) {
+    border-color: var(--cli-aviso);
+}
+
+.exe-content .box.cli-marco:is(.cli-ok, .cli-info, .cli-warn, .cli-fail) > .box-content {
+    padding-left: 0;
+    border-left: 0;
+}
+
+/* ---------- Botones, campos y actividades ---------- */
+
+/* Botones como «[ Comprobar ]»: texto verde enmarcado que se invierte al pasar por encima. */
+.exe-content .btn,
+.exe-content input[type="button"],
+.exe-content input[type="submit"],
+.exe-content input[type="reset"],
+.exe-content .iDevice_buttons button {
+    --bs-btn-color: #8ae234;
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: #8ae234;
+    --bs-btn-hover-color: #1d1f21;
+    --bs-btn-hover-bg: #8ae234;
+    --bs-btn-hover-border-color: #8ae234;
+    --bs-btn-active-color: #1d1f21;
+    --bs-btn-active-bg: #eeeeec;
+    --bs-btn-active-border-color: #eeeeec;
+    --bs-btn-disabled-color: #959791;
+    --bs-btn-disabled-bg: transparent;
+    --bs-btn-disabled-border-color: #4a4e50;
+    --bs-btn-border-radius: 0;
+    --bs-btn-font-family: var(--cli-letra);
+    --bs-btn-font-weight: 700;
+    --bs-btn-focus-box-shadow: none;
+    min-height: 2.5rem;
+    padding: .35rem 2ch;
+    border: .0625rem solid var(--cli-verde);
+    border-radius: 0;
+    background: transparent;
+    color: var(--cli-verde);
+    font: 700 1em/1.3 var(--cli-letra);
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.exe-content .btn:hover,
+.exe-content input:is([type="button"], [type="submit"], [type="reset"]):hover,
+.exe-content .iDevice_buttons button:hover {
+    background: var(--cli-verde);
+    color: var(--cli-fondo);
+}
+
+.exe-content .btn:disabled,
+.exe-content input:is([type="button"], [type="submit"]):disabled {
+    border-color: var(--cli-linea);
+    background: transparent;
+    color: var(--cli-apagado);
+}
+
+.exe-content .iDevice_buttons {
+    margin: .5em 0 1em;
+}
+
+/* Solución de un texto: lo que se despliega con su botón, como una salida aparte. */
+.exe-content .feedback.js-feedback {
+    margin: 0 0 1em;
+    padding: .75em 2ch .1em;
+    border-left: .1875rem solid var(--cli-verde);
+    background: var(--cli-fondo-panel);
+}
+
+.exe-content .exe-download-package-link a {
+    display: inline-block;
+    padding: .4rem 2ch;
+    border: .0625rem solid var(--cli-verde);
+    color: var(--cli-verde);
+    text-decoration: none;
+}
+
+.exe-content .exe-download-package-link a:hover {
+    background: var(--cli-verde);
+    color: var(--cli-fondo);
+}
+
+.exe-content input:is([type="text"], [type="number"], [type="search"], [type="email"], [type="url"]),
+.exe-content textarea,
+.exe-content select {
+    padding: .3rem 1ch;
+    border: .0625rem solid var(--cli-linea);
+    border-radius: 0;
+    background: var(--cli-fondo-oscuro);
+    color: var(--cli-brillante);
+    font: 1em/1.3 var(--cli-letra);
+}
+
+.exe-content input[type="radio"],
+.exe-content input[type="checkbox"] {
+    width: 1.1em;
+    height: 1.1em;
+    accent-color: var(--cli-verde);
+    vertical-align: -.15em;
+}
+
+/* Las actividades pintan fondos claros: aquí, paneles oscuros con una línea de color. */
+.exe-content :is(.TOFP-Feedback, .TOFP-Suggestion, .form-results-container, .FRMP-Feedback) {
+    margin: .5em 0;
+    padding: .5em 2ch;
+    border: 0;
+    border-left: .1875rem solid var(--cli-azul);
+    border-radius: 0;
+    background: var(--cli-fondo-panel) !important;
+    color: var(--cli-texto) !important;
+}
+
+/* Cuestionario: los aciertos y los fallos, como mensajes de arranque de systemd. */
+.exe-content .form-IDevice .form-feedback-message {
+    margin-top: .75em;
+    padding: .4em 2ch;
+    border: 0;
+    border-left: .1875rem solid var(--cli-linea);
+    border-radius: 0;
+    background: var(--cli-fondo-panel);
+    color: var(--cli-brillante);
+    box-shadow: none;
+}
+
+.exe-content .form-IDevice .form-feedback-correct { border-left-color: var(--cli-verde); }
+.exe-content .form-IDevice .form-feedback-wrong { border-left-color: var(--cli-rojo); }
+
+.exe-content .form-IDevice .form-feedback-correct::before {
+    content: "[  OK  ] ";
+    color: var(--cli-verde);
+    white-space: pre;
+}
+
+.exe-content .form-IDevice .form-feedback-wrong::before {
+    content: "[FAILED] ";
+    color: var(--cli-rojo-texto);
+    white-space: pre;
+}
+
+.exe-content .form-IDevice .score-text {
+    background: none;
+    color: var(--cli-brillante);
+}
+
+.exe-content .form-IDevice .score-text.pass-test { color: var(--cli-verde); }
+.exe-content .form-IDevice .score-text.fail-test { color: var(--cli-rojo-texto); }
+
+.exe-content .form-IDevice :is(.FRMP-Suggestion, .FRMP-ShowSuggestion) {
+    border: 0;
+    border-radius: 0;
+    background: var(--cli-fondo-panel);
+    color: var(--cli-cian);
+}
+
+.exe-content .form-IDevice .inline-icon {
+    color: var(--cli-apagado);
+}
+
+/* Cuestionario */
+.exe-content .form-IDevice :is(.FRMP-Questions, .form-body, .form-instructions) {
+    background: none;
+    color: inherit;
+}
+
+.exe-content .form-IDevice :is(li, .FormView_question) {
+    background: none;
+    color: inherit;
+}
+
+.exe-content .form-IDevice li::before {
+    content: none;
+}
+
+/* Ordenar: filas con línea fina y flechas de texto. */
+.exe-content .exe-sortableList-options {
+    padding-left: 0;
+    list-style: none;
+}
+
+.exe-content .exe-sortableList-options li {
+    margin: 0 0 .4em;
+    padding: .45em 7ch .45em 1.5ch;
+    border: .0625rem solid var(--cli-linea);
+    border-radius: 0;
+    background: var(--cli-fondo-panel);
+    color: var(--cli-texto);
+    box-shadow: none;
+}
+
+.exe-content .exe-sortableList-options li::before {
+    content: none;
+}
+
+.exe-content .exe-sortableList-options li[draggable="true"]:hover {
+    border-color: var(--cli-verde);
+}
+
+.exe-content .exe-sortableList li a {
+    width: 2.5ch;
+    height: 1.5em;
+    margin-top: -.75em;
+    right: 4ch;
+    background: none;
+    color: var(--cli-verde);
+    font: 1em/1.5em var(--cli-letra);
+    text-align: center;
+    text-decoration: none;
+    overflow: hidden;
+}
+
+.exe-content .exe-sortableList li a.down {
+    right: 1ch;
+}
+
+.exe-content .exe-sortableList li a::before {
+    content: "▲";
+    display: block;
+}
+
+.exe-content .exe-sortableList li a.down::before {
+    content: "▼";
+}
+
+.exe-content .exe-sortableList li a:is(:hover, :focus) {
+    background: var(--cli-verde);
+    color: var(--cli-fondo);
+}
+
+/* Licencia y «hecho con eXeLearning» */
+#packageLicense {
+    color: var(--cli-apagado);
+}
+
+#packageLicense p {
+    margin: 0;
+}
+
+#packageLicense a {
+    color: var(--cli-azul);
+}
+
+#packageLicense.propietary {
+    position: absolute;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    height: 0;
+}
+
+/* ---------- La página sin JavaScript: un documento oscuro ---------- */
+
+.exe-web-site .exe-content {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+}
+
+.exe-content .page-title {
+    margin: 0 0 1.5rem;
+    color: var(--cli-brillante);
+    font-family: var(--cli-letra);
+    font-size: 1.5em;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+/* El título de la página como el de un archivo Markdown. */
+.exe-content .page-title::before {
+    content: "# ";
+    color: var(--cli-apagado);
+}
+
+.exe-content .package-title {
+    margin: 0 0 .5rem;
+    color: var(--cli-verde);
+    font-size: 1em;
+    font-weight: 700;
+}
+
+.exe-web-site .page-counter {
+    float: right;
+    margin: 0;
+    color: var(--cli-apagado);
+}
+
+.exe-web-site #siteNav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.exe-web-site #siteNav li {
+    margin: 0;
+}
+
+.exe-web-site #siteNav li::before {
+    content: none;
+}
+
+.exe-web-site #siteNav .other-section {
+    display: block;
+}
+
+.exe-web-site #siteNav a {
+    display: flex;
+    padding: 0 1ch;
+    color: var(--cli-texto);
+    text-decoration: none;
+}
+
+.exe-web-site #siteNav a:hover {
+    background: var(--cli-linea);
+    color: var(--cli-brillante);
+}
+
+/* La página abierta, en vídeo inverso. */
+.exe-web-site #siteNav a.active {
+    background: var(--cli-verde);
+    color: var(--cli-fondo);
+}
+
+.exe-web-site main.page {
+    margin: 1.5rem 0;
+}
+
+.exe-web-site .nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin: 1.5rem 0;
+}
+
+.exe-web-site .nav-buttons span.nav-button {
+    visibility: hidden;
+}
+
+.exe-web-site #siteFooter {
+    padding-top: .75rem;
+    border-top: .0625rem dashed var(--cli-linea);
+}
+
+#made-with-eXe {
+    position: static;
+    margin: 0;
+}
+
+#made-with-eXe a {
+    display: inline;
+    width: auto;
+    height: auto;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--cli-azul);
+    font: inherit;
+    opacity: 1;
+}
+
+#made-with-eXe span {
+    padding: 0;
+}
+
+#skipNav {
+    top: -10rem;
+    z-index: 50;
+    padding: .5rem 2ch;
+    background: var(--cli-amarillo);
+    color: var(--cli-fondo);
+    font-family: var(--cli-letra);
+}
+
+#skipNav:focus {
+    top: .5rem;
+}
+
+#exe-client-search-results-list ul {
+    padding-left: 0;
+}
+
+#exe-client-search-results-list li {
+    margin-bottom: 1em;
+}
+
+/* ---------- La ventana de la terminal: la monta style.js ---------- */
+
+.cli-js body.exe-web-site {
+    background: var(--cli-escritorio);
+}
+
+.cli-js .exe-web-site .exe-content {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.cli-js .exe-web-site .exe-content > * {
+    min-width: 0;
+}
+
+/* Barra de título de la ventana: el nombre del recurso. */
+.cli-titulo {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: .35rem 4ch;
+    background: var(--cli-marco);
+    border-bottom: .0625rem solid #000;
+    text-align: center;
+}
+
+/* Icono de terminal, «>_», a la izquierda del título. */
+.cli-titulo::before {
+    content: ">_";
+    position: absolute;
+    left: 1.5ch;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--cli-apagado);
+    font-weight: 700;
+}
+
+.cli-titulo .package-header {
+    margin: 0;
+}
+
+.cli-titulo .package-title {
+    margin: 0;
+    color: var(--cli-brillante);
+    font-size: .9375rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+/* El prompt: usuario@máquina en verde, la ruta en azul, como el bash de Debian y Ubuntu. */
+.exe-content .cli-prompt {
+    margin: 0 0 .35rem;
+    color: var(--cli-texto);
+    overflow-wrap: anywhere;
+}
+
+.cli-usuario {
+    color: var(--cli-verde);
+    font-weight: 700;
+}
+
+.cli-ruta {
+    color: var(--cli-azul);
+    font-weight: 700;
+}
+
+.cli-orden {
+    color: var(--cli-brillante);
+}
+
+.exe-content .cli-espera {
+    margin: 1.5rem 0 0;
+}
+
+.cli-cursor {
+    display: inline-block;
+    width: 1ch;
+    height: 1.15em;
+    background: var(--cli-texto);
+    vertical-align: -.2em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .cli-cursor {
+        animation: cli-parpadeo 1.1s steps(1) infinite;
+    }
+}
+
+@keyframes cli-parpadeo {
+    50% { opacity: 0; }
+}
+
+.cli-js .exe-web-site main.page {
+    flex: 1 0 auto;
+    margin: 0;
+    padding: 1.25rem 1rem 1.5rem;
+    background: var(--cli-fondo);
+}
+
+.cli-js .exe-web-site .main-header {
+    margin: 0;
+}
+
+/* Solo cuando hay resultados: vacío, su margen empujaría la página hacia abajo. */
+.cli-js #exe-client-search-results:has(li) {
+    margin-bottom: 1.5rem;
+}
+
+.cli-js .page-content > .box:last-child {
+    margin-bottom: 0;
+}
+
+/* El índice como la salida de «tree». */
+.cli-arbol {
+    padding: 1.25rem 1rem;
+    background: var(--cli-fondo-panel);
+    color: var(--cli-texto);
+}
+
+.cli-arbol-titulo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.cli-arbol #siteNav {
+    margin: .25rem -1ch 0;
+    line-height: 1.5;
+}
+
+.cli-arbol #siteNav a {
+    padding: 0 1ch;
+}
+
+.cli-rama {
+    flex: 0 0 auto;
+    color: var(--cli-apagado);
+    white-space: pre;
+}
+
+.exe-web-site #siteNav a.active .cli-rama {
+    color: inherit;
+}
+
+.cli-rama-titulo {
+    min-width: 0;
+}
+
+/* El buscador, como una orden más. */
+.cli-arbol #exe-client-search-form {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: .0625rem dashed var(--cli-linea);
+}
+
+.cli-arbol #exe-client-search-form p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1ch;
+    margin: 0;
+}
+
+.cli-arbol #exe-client-search-text {
+    flex: 1 1 8rem;
+    min-width: 0;
+    padding: .3rem 1ch;
+    border: .0625rem solid var(--cli-linea);
+    border-radius: 0;
+    background: var(--cli-fondo-oscuro);
+    color: var(--cli-brillante);
+    font: 1rem/1.3 var(--cli-letra);
+}
+
+.cli-arbol #exe-client-search-submit {
+    padding: .3rem 1.5ch;
+    border: .0625rem solid var(--cli-verde);
+    border-radius: 0;
+    background: transparent;
+    color: var(--cli-verde);
+    font: 700 1rem/1.3 var(--cli-letra);
+    cursor: pointer;
+}
+
+.cli-arbol #exe-client-search-submit:hover {
+    background: var(--cli-verde);
+    color: var(--cli-fondo);
+}
+
+.cli-arbol #exe-client-search-reset {
+    width: auto;
+    height: auto;
+    padding: .3rem 1ch;
+    background: none;
+    color: var(--cli-rojo);
+    font: 1rem/1.3 var(--cli-letra);
+    text-decoration: underline;
+}
+
+.cli-arbol #exe-client-search-reset span {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+}
+
+/* Barra de estado de tmux: verde con texto negro. */
+.cli-barra {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: stretch;
+    gap: 0 1ch;
+    min-height: 2.5rem;
+    padding: 0 1ch;
+    background: var(--cli-verde-oscuro);
+    color: #000;
+}
+
+.cli-sesion {
+    display: flex;
+    align-items: center;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cli-tecla {
+    display: flex;
+    align-items: center;
+    gap: 1ch;
+    padding: 0 1ch;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: #000 !important;
+    font: 1rem/1.2 var(--cli-letra);
+    text-decoration: none !important;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.cli-anterior::before { content: "◀"; }
+.cli-siguiente::after { content: "▶"; }
+
+a.cli-tecla:hover,
+button.cli-tecla:hover {
+    background: #000;
+    color: var(--cli-verde) !important;
+}
+
+.cli-tecla:focus-visible {
+    outline: .125rem solid #000;
+    outline-offset: -.25rem;
+}
+
+.cli-tecla[aria-disabled="true"] {
+    opacity: .45;
+    cursor: default;
+}
+
+.cli-estado {
+    display: flex;
+    align-items: center;
+    gap: 2ch;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.cli-barra .page-counter {
+    float: none;
+    margin: 0;
+    color: #000;
+}
+
+.cli-barra .page-counter strong {
+    color: inherit;
+}
+
+.cli-barra .page-counter-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+
+/* Debajo de la ventana: licencia y eXeLearning. */
+.cli-pie {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .25rem 3ch;
+    padding: .6rem 1rem .8rem;
+    background: var(--cli-escritorio);
+    color: #e0e2dc;
+    font-size: .8125rem;
+}
+
+.cli-pie #packageLicense,
+.cli-pie #made-with-eXe a,
+.cli-pie #packageLicense a {
+    color: #e0e2dc;
+}
+
+.cli-js .exe-web-site #siteFooter {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* Móvil: el índice se abre sobre la página, por encima de la barra. */
+@media screen and (max-width: 59.99rem) {
+    .cli-js .cli-arbol {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 2.5rem;
+        left: 0;
+        z-index: 30;
+        display: none;
+        overflow: auto;
+        border-bottom: .0625rem solid var(--cli-verde);
+    }
+
+    .cli-js .cli-arbol-abierto .cli-arbol {
+        display: block;
+    }
+
+    .cli-sesion,
+    .cli-reloj {
+        display: none;
+    }
+
+    .cli-barra {
+        padding: 0;
+        gap: 0;
+    }
+
+    .cli-anterior .cli-tecla-texto,
+    .cli-siguiente .cli-tecla-texto {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+    }
+
+    .cli-tecla {
+        padding: 0 1.5ch;
+    }
+
+    .cli-estado {
+        padding-right: 1.5ch;
+    }
+}
+
+/* Pantallas anchas: una ventana sobre el escritorio, con el árbol a la izquierda. */
+@media screen and (min-width: 60rem) {
+    .cli-js body.exe-web-site {
+        padding: 1.5rem 2rem 0;
+    }
+
+    .cli-js .exe-web-site .exe-content {
+        display: grid;
+        grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+        grid-template-rows: auto 1fr auto auto;
+        grid-template-areas:
+            "titulo titulo"
+            "arbol  pagina"
+            "barra  barra"
+            "pie    pie";
+        max-width: 84rem;
+        min-height: calc(100vh - 1.5rem);
+        margin: 0 auto;
+        background: var(--cli-escritorio);
+    }
+
+    .cli-titulo {
+        grid-area: titulo;
+        border-radius: .5rem .5rem 0 0;
+        box-shadow: 0 .5rem 2rem rgba(0, 0, 0, .45);
+    }
+
+    .cli-arbol {
+        grid-area: arbol;
+        border-right: .0625rem solid var(--cli-linea);
+    }
+
+    .cli-js .exe-web-site main.page {
+        grid-area: pagina;
+        padding: 1.5rem 3ch 2rem;
+    }
+
+    .cli-barra {
+        grid-area: barra;
+        position: sticky;
+    }
+
+    .cli-pie {
+        grid-area: pie;
+        padding-inline: 0;
+    }
+}
+
+/* ---------- Editor ---------- */
+
+#workarea .box-head .box-title,
+#workarea .box-head .content-editable-title :is(h1, [contenteditable="true"]) {
+    color: inherit !important;
+    font-family: var(--cli-letra) !important;
+}
+
+#workarea .box-head :is(.btn-edit-title, .box_actions .btn-action-menu, .exe-actions-menu > button) .small-icon {
+    filter: invert(1) !important;
+}
+
+#workarea .box-head .dropdown-menu {
+    z-index: 2000 !important;
+}
+
+#workarea .box-head .dropdown-menu .small-icon {
+    filter: none !important;
+}
+
+/* ---------- Impresión: tinta oscura sobre papel blanco ---------- */
+
+@media print {
+    /* Los tonos oscuros de la paleta Tango, que se leen sobre papel blanco. */
+    :root {
+        --cli-fondo: #fff;
+        --cli-fondo-panel: #f3f3f3;
+        --cli-fondo-oscuro: #f3f3f3;
+        --cli-texto: #000;
+        --cli-brillante: #000;
+        --cli-apagado: #555753;
+        --cli-linea: #888a85;
+        --cli-verde: #3b7a05;
+        --cli-verde-oscuro: #3b7a05;
+        --cli-azul: #204a87;
+        --cli-amarillo: #8f5902;
+        --cli-rojo: #a40000;
+        --cli-rojo-texto: #a40000;
+        --cli-cian: #06686a;
+        --cli-magenta: #5c3566;
+    }
+
+    #skipNav,
+    .exe-content .iDevice_buttons,
+    .cli-barra,
+    .cli-arbol,
+    .cli-prompt,
+    .cli-titulo::before,
+    .exe-content .box-toggle,
+    .exe-web-site .nav-buttons,
+    .exe-web-site #siteNav {
+        display: none !important;
+    }
+
+    body.exe-export,
+    .exe-content,
+    .cli-titulo,
+    .cli-pie,
+    .cli-js .exe-web-site main.page,
+    .exe-content pre,
+    .exe-content code,
+    .exe-content .feedback.js-feedback,
+    .exe-content .box :is(.box-icon, .box-title, .box-toggle) {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    .exe-content :is(strong, em, a, h2, h3, h4, figcaption, .page-title, .box-title, .package-title, .exe-math-rendered),
+    #packageLicense,
+    #packageLicense a {
+        color: #000 !important;
+    }
+
+    .cli-js .exe-web-site .exe-content {
+        display: block;
+        min-height: 0;
+    }
+
+    .cli-js body.exe-web-site {
+        padding: 0;
+        background: #fff;
+    }
+}

@@ -1,0 +1,6 @@
+# Finales de línea
+* text=auto eol=lf
+*.png binary
+*.woff2 binary
+*.zip binary
+*.elpx binary

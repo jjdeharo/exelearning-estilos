@@ -1,0 +1,40 @@
+<div class="exe-form-container"><div class="game-evaluation-ids js-hidden" data-id="{id}" data-evaluationid=""></div>
+
+            <div id="frmMainContainer-{id}" class="form-IDevice" data-id="{id}">
+                <div class="form-Data js-hidden">{}</div>
+                <div class="form-instructions">{instrucciones}</div>
+                <div class="FRMP-GameScoreBoard" style="display:none;">
+                    <div>
+                        <strong><span class="sr-av">Tiempo por pregunta:</span></strong>
+                        <span id="frmPTime-{id}">00:00</span>
+                    </div>
+                </div>
+                <div class="FRMP-StartGame" id="frmStartGameDiv-{id}" style="display:none;">
+                      <button  id="frmStartGame-{id}" type="button" class="btn btn-primary">Haz clic aquí para empezar</button>
+                </div>
+                <div class="form-body" id="frmBody-{id}" style="display:hide;">
+                    <div class="FRMP-Questions">
+                        <div id="form-questions-{id}" > </div>
+                        <div id="frmCover-{id}" class="FRMP-Cover"> </div>
+                    </div>
+                    
+                    <div id="resultsContainer-{id}" class="form-results-container inline">
+                        <div id="form-score-{id}" class="score-text">Puntuación.</div>
+                        <div id="form-result-test-{id}" class="score-text phrase-score"></div>
+                    </div>
+                    <div class="form-buttons-container inline">
+                        <input id="form-button-check-{id}" class="btn btn-primary" type="button" value="Comprobar"
+                            data-id="{id}" pass-rate="" />
+                        <input id="form-button-reset-{id}" type="button" value="Reiniciar"
+                            data-id="{id}" class="btn btn-primary"  style="display:none" />
+                        <input id="form-button-show-answers-{id}" class="btn btn-primary" type="button" value="Mostrar respuestas"
+                            data-id="{id}" style="display: " />
+                    </div>
+                </div>
+                <div class="Games-BottonContainer">
+                    <div class="Games-GetScore">
+                        <input id="frmPSendScore-{id}" type="button" value="Guardar puntuación" class="feedbackbutton Games-SendScore" style="display:none"/> <span class="Games-RepeatActivity"></span>
+                    </div>
+                </div>
+                <div class="form-instructions"></div>
+            </div></div>

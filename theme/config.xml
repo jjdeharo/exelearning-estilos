@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<theme>
+  <name>consola</name>
+  <title>Consola</title>
+  <version>1.0.0</version>
+  <compatibility>4.0.5</compatibility>
+  <author>Juan José de Haro (@jjdeharo)</author>
+  <license>GNU Affero General Public License v3.0 o posterior</license>
+  <license-url>https://www.gnu.org/licenses/agpl-3.0.html</license-url>
+  <description>El recurso como una terminal de Linux: fondo oscuro, la paleta Tango de GNOME Terminal y la letra DejaVu Sans Mono. El índice aparece como la salida de la orden tree, cada página se abre desde el prompt de bash con su ruta (aula@exe:~/recurso/página) y una barra de estado como la de tmux lleva a la página anterior, al índice y a la siguiente. Las actividades se enmarcan con doble línea, como una ventana de dialog. En el campo «Clase CSS» de una caja se puede escribir cli-ok, cli-info, cli-warn o cli-fail para ponerle delante del título una etiqueta de arranque de systemd ([  OK  ], [ INFO ], [ WARN ], [FAILED]), y cli-marco para enmarcarla. En el móvil el índice se abre con su botón; sin JavaScript o al imprimir, el contenido se lee como una página normal.
+
+Tipografía DejaVu Sans Mono (https://dejavu-fonts.github.io/), con la licencia de Bitstream Vera y los cambios de DejaVu en dominio público; el texto completo está en fonts/LICENSE.txt. Iconos de los iDevices: Material Symbols de Google, tomados del estilo Zen de eXeLearning y coloreados en verde, bajo la Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0); el texto completo está en icons/LICENSE.txt.</description>
+  <downloadable>1</downloadable>
+</theme>
