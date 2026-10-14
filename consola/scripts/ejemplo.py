@@ -2,7 +2,7 @@
 """Contenido del recurso de ejemplo «Ecuaciones de segundo grado».
 
 Cada página es un diccionario con su título, la página de la que cuelga y sus
-cajas. Las fórmulas van en LaTeX: \\( … \\) dentro del texto y \\[ … \\] en
+cajas. Los iconos son los Material Symbols que trae eXeLearning. Las fórmulas van en LaTeX: \\( … \\) dentro del texto y \\[ … \\] en
 línea aparte. eXeLearning las dibuja al exportar.
 """
 
@@ -78,17 +78,17 @@ PAGINAS = [
     {
         "titulo": "Inicio",
         "cajas": [
-            texto("Bienvenida", "start", r"""
+            texto("Bienvenida", "rocket_launch", r"""
 <p>Este recurso explica cómo se resuelven las <strong>ecuaciones de segundo grado</strong>, tanto las incompletas como las completas, con ejemplos resueltos paso a paso y actividades para practicar.</p>
 <p>Es también el ejemplo del estilo <strong>Consola</strong> para eXeLearning, que presenta el recurso como una terminal de Linux: cada página es un archivo, el índice es la salida de la orden <code>tree</code> y la barra verde de abajo es la de <code>tmux</code>.</p>"""),
-            texto("Qué aprenderás", "objectives", r"""
+            texto("Qué aprenderás", "flag", r"""
 <ul>
 <li>A reconocer una ecuación de segundo grado y sus coeficientes \(a\), \(b\) y \(c\).</li>
 <li>A resolver las incompletas sin la fórmula general.</li>
 <li>A aplicar la fórmula general a las completas.</li>
 <li>A saber cuántas soluciones tiene una ecuación antes de resolverla, con el discriminante.</li>
 </ul>""", clase="cli-ok"),
-            texto("Cómo moverse por el recurso", "guide", r"""
+            texto("Cómo moverse por el recurso", "map", r"""
 <ul>
 <li>El índice de la izquierda muestra las páginas como las carpetas y los archivos de la orden <code>tree</code>. En el móvil se abre con el botón «Índice» de la barra inferior.</li>
 <li>La barra verde lleva a la página anterior y a la siguiente.</li>
@@ -100,7 +100,7 @@ PAGINAS = [
     {
         "titulo": "Qué es una ecuación de segundo grado",
         "cajas": [
-            texto("Definición", "book", r"""
+            texto("Definición", "menu_book", r"""
 <p>Una <strong>ecuación de segundo grado</strong> con una incógnita es la que, después de quitar paréntesis y denominadores y de pasar todos los términos a un miembro, se puede escribir así:</p>
 <p>\[ ax^2 + bx + c = 0, \qquad a \neq 0 \]</p>
 <p>Los números \(a\), \(b\) y \(c\) son los <strong>coeficientes</strong>: \(a\) acompaña a \(x^2\), \(b\) acompaña a \(x\) y \(c\) es el <strong>término independiente</strong>. El coeficiente \(a\) no puede ser cero, porque entonces no habría término en \(x^2\) y la ecuación sería de primer grado.</p>"""),
@@ -115,14 +115,16 @@ PAGINAS = [
 <tr><td>\(5x^2 = 0\)</td><td>\(5\)</td><td>\(0\)</td><td>\(0\)</td><td>incompleta, sin los dos</td></tr>
 </tbody>
 </table>"""),
-            texto("Antes de leer los coeficientes", "alert", r"""
+            texto("Antes de leer los coeficientes", "warning", r"""
 <p>Hay que dejar la ecuación en la forma \(ax^2 + bx + c = 0\). Por ejemplo, en \(x^2 = 5x - 6\) el término independiente no es \(-6\): al pasar todo al primer miembro queda \(x^2 - 5x + 6 = 0\), así que \(a = 1\), \(b = -5\) y \(c = 6\).</p>""", clase="cli-warn"),
-            texto("Qué significa resolverla", "observe", r"""
+            texto("Qué significa resolverla", "visibility", r"""
 <p>Resolver la ecuación es encontrar sus <strong>soluciones</strong> o <strong>raíces</strong>: los valores de \(x\) que la cumplen. Una ecuación de segundo grado tiene <strong>dos soluciones, una o ninguna</strong> entre los números reales.</p>
 <p>Las soluciones son los puntos en los que la parábola \(y = ax^2 + bx + c\) corta el eje horizontal. La de \(y = x^2 - 2x - 3\) lo corta en \(x = -1\) y en \(x = 3\), marcados con una <code>o</code>: son las soluciones de \(x^2 - 2x - 3 = 0\).</p>
 <figure><pre role="img" aria-label="Parábola y igual a x al cuadrado menos 2x menos 3, que corta el eje horizontal en x igual a menos 1 y en x igual a 3">""" + PARABOLA + r"""</pre>
 <figcaption>gnuplot: y = x^2 - 2x - 3, dibujada con caracteres</figcaption></figure>
-<p>Se comprueba sustituyendo: \((-1)^2 - 2\cdot(-1) - 3 = 1 + 2 - 3 = 0\) y \(3^2 - 2\cdot 3 - 3 = 9 - 6 - 3 = 0\).</p>"""),
+<p>Se comprueba sustituyendo:</p>
+<p>\[ (-1)^2 - 2\cdot(-1) - 3 = 1 + 2 - 3 = 0 \]</p>
+<p>\[ 3^2 - 2\cdot 3 - 3 = 9 - 6 - 3 = 0 \]</p>"""),
         ],
     },
     {
@@ -143,23 +145,23 @@ PAGINAS = [
             {
                 "titulo": "Sin término en x",
                 "cajas": [
-                    texto("Método", "guide", r"""
+                    texto("Método", "map", r"""
 <p>En \(ax^2 + c = 0\) se despeja \(x^2\) y se saca la raíz cuadrada. Como un número y su opuesto tienen el mismo cuadrado, hay que tomar las dos raíces, la positiva y la negativa:</p>
 <p>\[ ax^2 + c = 0 \;\Rightarrow\; x^2 = -\frac{c}{a} \;\Rightarrow\; x = \pm\sqrt{-\frac{c}{a}} \]</p>"""),
                     texto("Ejemplo resuelto", "calculate", r"""
 <p>Resolvemos \(2x^2 - 50 = 0\).</p>
 <p>\[ 2x^2 = 50 \;\Rightarrow\; x^2 = 25 \;\Rightarrow\; x = \pm\sqrt{25} = \pm 5 \]</p>
 <p>Soluciones: \(x_1 = 5\) y \(x_2 = -5\). Comprobación: \(2\cdot 5^2 - 50 = 50 - 50 = 0\), y lo mismo con \(-5\), porque \((-5)^2 = 25\).</p>"""),
-                    texto("Cuándo no hay solución", "alert", r"""
+                    texto("Cuándo no hay solución", "warning", r"""
 <p>Si \(-\frac{c}{a}\) es negativo, la ecuación no tiene solución real, porque ningún número real elevado al cuadrado da un resultado negativo. En \(x^2 + 9 = 0\) queda \(x^2 = -9\), y no hay ningún número real cuyo cuadrado sea \(-9\).</p>""", clase="cli-warn"),
-                    texto("Error frecuente", "think", r"""
+                    texto("Error frecuente", "psychology", r"""
 <p>Escribir solo \(x = 5\) al resolver \(x^2 = 25\): se pierde la solución negativa. La ecuación tiene dos soluciones, \(5\) y \(-5\).</p>""", clase="cli-fail"),
                 ],
             },
             {
                 "titulo": "Sin término independiente",
                 "cajas": [
-                    texto("Método", "guide", r"""
+                    texto("Método", "map", r"""
 <p>En \(ax^2 + bx = 0\) se saca factor común \(x\). Un producto vale cero solo si alguno de sus factores es cero, así que la ecuación se separa en dos de primer grado:</p>
 <p>\[ ax^2 + bx = 0 \;\Rightarrow\; x\,(ax + b) = 0 \;\Rightarrow\; \begin{cases} x = 0 \\ ax + b = 0 \;\Rightarrow\; x = -\dfrac{b}{a} \end{cases} \]</p>"""),
                     texto("Ejemplo resuelto", "calculate", r"""
@@ -168,7 +170,7 @@ PAGINAS = [
 <p>Comprobación con \(x = 4\): \(3\cdot 4^2 - 12\cdot 4 = 48 - 48 = 0\).</p>"""),
                     texto("Siempre tiene dos soluciones", "info", r"""
 <p>Este tipo de ecuación tiene siempre dos soluciones reales distintas, y una de ellas es \(x = 0\).</p>""", clase="cli-ok"),
-                    texto("Error frecuente", "think", r"""
+                    texto("Error frecuente", "psychology", r"""
 <p>Dividir los dos miembros entre \(x\): de \(3x^2 = 12x\) se pasaría a \(3x = 12\) y se perdería la solución \(x = 0\). No se puede dividir entre \(x\) sin saber si vale cero; por eso se saca factor común.</p>""", clase="cli-fail"),
                 ],
             },
@@ -185,10 +187,10 @@ PAGINAS = [
             {
                 "titulo": "La fórmula general",
                 "cajas": [
-                    texto("La fórmula", "math", r"""
+                    texto("La fórmula", "functions", r"""
 <p>\[ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} \]</p>
 <p>El signo \(\pm\) indica que hay que hacer dos cálculos, uno sumando la raíz y otro restándola. Cada uno da una solución.</p>""", clase="cli-marco"),
-                    texto("Paso a paso", "roadmap", r"""
+                    texto("Paso a paso", "route", r"""
 <ol>
 <li>Pasar todos los términos a un miembro y ordenarlos: \(ax^2 + bx + c = 0\).</li>
 <li>Escribir los coeficientes con su signo.</li>
@@ -200,24 +202,26 @@ PAGINAS = [
 <p>Resolvemos \(2x^2 - 7x + 3 = 0\), con \(a = 2\), \(b = -7\) y \(c = 3\).</p>
 <p>\[ x = \frac{-(-7) \pm \sqrt{(-7)^2 - 4\cdot 2\cdot 3}}{2\cdot 2} = \frac{7 \pm \sqrt{49 - 24}}{4} = \frac{7 \pm 5}{4} \]</p>
 <p>\[ x_1 = \frac{7 + 5}{4} = 3, \qquad x_2 = \frac{7 - 5}{4} = \frac{1}{2} \]</p>
-<p>Comprobación: \(2\cdot 3^2 - 7\cdot 3 + 3 = 18 - 21 + 3 = 0\) y \(2\cdot\left(\frac{1}{2}\right)^2 - 7\cdot\frac{1}{2} + 3 = \frac{1}{2} - \frac{7}{2} + 3 = 0\).</p>"""),
-                    texto("De dónde sale", "think", r"""
+<p>Comprobación:</p>
+<p>\[ 2\cdot 3^2 - 7\cdot 3 + 3 = 18 - 21 + 3 = 0 \]</p>
+<p>\[ 2\cdot\left(\frac{1}{2}\right)^2 - 7\cdot\frac{1}{2} + 3 = \frac{1}{2} - \frac{7}{2} + 3 = 0 \]</p>"""),
+                    texto("De dónde sale", "psychology", r"""
 <p>La fórmula se obtiene completando un cuadrado en \(ax^2 + bx + c = 0\).</p>""", solucion=r"""
 <p>Se multiplican los dos miembros por \(4a\) y se suma \(b^2\) a los dos:</p>
 <p>\[ 4a^2x^2 + 4abx + 4ac = 0 \;\Rightarrow\; 4a^2x^2 + 4abx + b^2 = b^2 - 4ac \]</p>
 <p>El primer miembro es el cuadrado de \(2ax + b\). Sacando la raíz cuadrada y despejando \(x\):</p>
 <p>\[ (2ax + b)^2 = b^2 - 4ac \;\Rightarrow\; 2ax + b = \pm\sqrt{b^2 - 4ac} \;\Rightarrow\; x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} \]</p>""", boton="Ver de dónde sale|Ocultar"),
-                    texto("Error frecuente", "alert", r"""
+                    texto("Error frecuente", "warning", r"""
 <p>Olvidar el signo de \(b\). Si \(b = -7\), el numerador empieza por \(-(-7) = 7\). Y \(b^2\) nunca es negativo: \((-7)^2 = 49\), no \(-49\).</p>""", clase="cli-fail"),
                 ],
             },
             {
                 "titulo": "El discriminante",
                 "cajas": [
-                    texto("Definición", "book", r"""
+                    texto("Definición", "menu_book", r"""
 <p>El <strong>discriminante</strong> es la expresión que hay dentro de la raíz de la fórmula general. Se representa con la letra griega delta mayúscula:</p>
 <p>\[ \Delta = b^2 - 4ac \]</p>"""),
-                    texto("Cuántas soluciones hay", "objectives", r"""
+                    texto("Cuántas soluciones hay", "flag", r"""
 <table class="exe-table">
 <thead><tr><th>Discriminante</th><th>Soluciones</th><th>Ejemplo</th></tr></thead>
 <tbody>
@@ -226,7 +230,7 @@ PAGINAS = [
 <tr><td>\(\Delta < 0\)</td><td>ninguna solución real</td><td>\(x^2 + x + 1 = 0\): \(\Delta = 1 - 4 = -3\)</td></tr>
 </tbody>
 </table>"""),
-                    texto("Por qué", "think", r"""
+                    texto("Por qué", "psychology", r"""
 <p>Si el discriminante es negativo, la fórmula pide la raíz cuadrada de un número negativo, que no existe entre los números reales. Si es cero, sumar o restar \(\sqrt{0}\) da lo mismo, y las dos soluciones coinciden.</p>"""),
                     texto("Un atajo", "info", r"""
 <p>Calcular primero el discriminante ahorra trabajo: si es negativo, ya se sabe que la ecuación no tiene solución real y no hace falta seguir.</p>""", clase="cli-info"),
@@ -237,7 +241,7 @@ PAGINAS = [
     {
         "titulo": "Ejercicios resueltos",
         "cajas": [
-            texto("Cómo trabajar", "guide", r"""
+            texto("Cómo trabajar", "map", r"""
 <p>Resuelve cada ecuación en tu cuaderno antes de pulsar «Ver solución». Fíjate primero en si es completa o incompleta.</p>""", clase="cli-info"),
             texto("Ejercicio 1", "calculate", r"""<p>Resuelve \(x^2 - 49 = 0\).</p>""", solucion=r"""
 <p>Es incompleta, sin término en \(x\):</p>
@@ -270,7 +274,7 @@ PAGINAS = [
     {
         "titulo": "Actividades",
         "cajas": [
-            texto("Comprueba lo que sabes", "activity", r"""
+            texto("Comprueba lo que sabes", "assignment", r"""
 <p>Dos actividades para repasar: ordenar los pasos con los que se resuelve una ecuación completa y un test de diez preguntas. Se pueden repetir tantas veces como se quiera.</p>"""),
         ],
         "hijas": [
@@ -280,7 +284,7 @@ PAGINAS = [
                     {
                         "tipo": "scrambled-list",
                         "titulo": "Resolver x² + 2 = 3x",
-                        "icono": "pieces",
+                        "icono": "swap_vert",
                         "instrucciones": r"<p>Ordena los pasos para resolver \(x^2 + 2 = 3x\).</p>",
                         "opciones": [
                             r"Pasar todo al primer miembro: \(x^2 - 3x + 2 = 0\).",
@@ -299,7 +303,7 @@ PAGINAS = [
                     {
                         "tipo": "form",
                         "titulo": "Diez preguntas",
-                        "icono": "ask",
+                        "icono": "quiz",
                         "instrucciones": "<p>Responde a las preguntas y pulsa «Comprobar» al final. Para superar el test hacen falta cinco aciertos.</p>",
                         "preguntas": [
                             {"activityType": "true-false", "baseText": r"<p>\(x^2 - 3x = 0\) es una ecuación incompleta.</p>", "answer": "1"},
@@ -334,11 +338,12 @@ PAGINAS = [
 <li>Estilo: licencia <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">GNU AGPL v3 o posterior</a>, la misma que eXeLearning.</li>
 <li>Contenido de este ejemplo: licencia <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.es" target="_blank" rel="noopener">CC BY-SA 4.0</a>.</li>
 <li>Tipografía <a href="https://dejavu-fonts.github.io/" target="_blank" rel="noopener">DejaVu Sans Mono</a>, del proyecto DejaVu: licencia de Bitstream Vera, con los cambios de DejaVu en dominio público.</li>
-<li>Iconos de los iDevices: <a href="https://fonts.google.com/icons" target="_blank" rel="noopener">Material Symbols</a> de Google, tomados del estilo Zen de eXeLearning y coloreados en verde, bajo la licencia Apache 2.0.</li>
+<li>Iconos de las cajas: los generales de eXeLearning, <a href="https://fonts.google.com/icons" target="_blank" rel="noopener">Material Symbols</a> de Google; el estilo los pinta de verde.</li>
+<li>Fórmulas: el MathJax que incluye eXeLearning.</li>
 <li>Colores: la paleta del <a href="https://en.wikipedia.org/wiki/Tango_Desktop_Project" target="_blank" rel="noopener">proyecto Tango</a>, la de GNOME Terminal.</li>
 <li>La idea y la organización del repositorio siguen los estilos de eXeLearning del Área de Tecnología Educativa del Gobierno de Canarias, de Ernesto Serrano, como <a href="https://ateeducacion.github.io/exelearning-style-teletext/" target="_blank" rel="noopener">eXeTexto</a>.</li>
 </ul>"""),
-            texto("Uso de inteligencia artificial", "technology", r"""
+            texto("Uso de inteligencia artificial", "smart_toy", r"""
 <p>Estilo y ejemplo hechos con Claude Code (Anthropic) en octubre de 2026, con la dirección y la revisión de su autor: <a href="https://jjdeharo.github.io/miae/?nivel=4" target="_blank" rel="noopener">nivel 4 del MIAE, cocreación</a>.</p>""", clase="cli-info"),
             {"tipo": "download-source-file", "titulo": "Descargar el recurso", "icono": "download"},
         ],

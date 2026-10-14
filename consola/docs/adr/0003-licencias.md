@@ -5,14 +5,13 @@
 
 ## Contexto
 
-La guía «Vibe coding responsable» de Juan José de Haro propone AGPL v3 para el código y CC BY-SA 4.0 para los contenidos, salvo indicación en contra. Los estilos de ATE usan CC0. El estilo incorpora una tipografía y unos iconos de terceros.
+La guía «Vibe coding responsable» de Juan José de Haro propone AGPL v3 para el código y CC BY-SA 4.0 para los contenidos, salvo indicación en contra. Los estilos de ATE usan CC0. El estilo incorpora una tipografía de terceros; los iconos son los de eXeLearning.
 
 ## Decisión
 
 - Estilo y scripts: **AGPL-3.0-or-later**, la de la guía y la de eXeLearning, con línea SPDX en cada archivo de código.
 - Ejemplo «Ecuaciones de segundo grado»: **CC BY-SA 4.0** (`LICENSE-CONTENIDOS`), también en los metadatos del proyecto.
 - DejaVu Sans Mono: licencia de Bitstream Vera y cambios de DejaVu en dominio público; texto completo en `theme/fonts/LICENSE.txt`, descargado del repositorio del proyecto DejaVu.
-- Iconos: Apache 2.0, con su texto en `theme/icons/LICENSE.txt`, como en Zen.
 - Todo se acredita dentro del propio estilo (`config.xml`, cabecera de `style.css`) para que viaje con el ZIP, y en la página de créditos del ejemplo.
 
 ## Alternativas descartadas

@@ -20,8 +20,7 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
     const errores = [];
     pagina.on('pageerror', error => errores.push(error.message));
     pagina.on('response', respuesta => {
-        // MathJax: eXeLearning lo pide aunque las fórmulas ya vengan dibujadas (ver docs/adr/0004).
-        if (respuesta.status() >= 400 && respuesta.url().startsWith(base) && !respuesta.url().includes('/exe_math/')) {
+        if (respuesta.status() >= 400 && respuesta.url().startsWith(base)) {
             errores.push(`${respuesta.status()} ${respuesta.url()}`);
         }
     });
@@ -53,8 +52,9 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
         while (await pagina.locator('a.cli-siguiente').count() && visitadas.length < 20) {
             await pulsar('a.cli-siguiente');
             visitadas.push(pagina.url());
-            assert.equal(await pagina.locator('.exe-math-rendered').evaluateAll(nodos => nodos.filter(nodo => !nodo.querySelector('svg')).length), 0, 'Fórmulas dibujadas');
-            assert.doesNotMatch(await pagina.locator('main.page').innerText(), /\\\(|\\\[/, `Sin LaTeX a la vista en ${pagina.url()}`);
+            // MathJax de eXeLearning: al terminar no queda LaTeX a la vista.
+            await pagina.waitForFunction(() => !/\\\(|\\\[/.test(document.querySelector('main.page').innerText), null, { timeout: 15000 })
+                .catch(() => { throw new Error(`LaTeX sin dibujar en ${pagina.url()}`); });
         }
         assert.deepEqual(visitadas, urls, '«Siguiente» recorre todas las páginas en orden');
         assert.equal(await pagina.locator('.cli-siguiente').getAttribute('aria-disabled'), 'true', 'Nada después de la última');
@@ -140,7 +140,7 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
             }
         }
         await pagina.locator('[id^="form-button-check-"]').click();
-        await pagina.locator('[id^="form-result-test-"]').filter({ hasText: /superado/ }).waitFor();
+        await pagina.locator('[id^="form-result-test-"]').filter({ hasText: /pasado la prueba/ }).waitFor();
         assert.match(await pagina.locator('[id^="form-score-"]').innerText(), /10\/10/, 'El test reconoce todas las respuestas');
         assert.equal(await pagina.locator('.form-feedback-correct').count(), TEST.length, 'Diez aciertos marcados');
 

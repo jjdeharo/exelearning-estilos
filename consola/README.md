@@ -49,7 +49,7 @@ Las cuatro etiquetas ponen además una línea de su color a la izquierda del con
 
 ### Fórmulas
 
-Las fórmulas se escriben en LaTeX, con `\( … \)` dentro del texto y `\[ … \]` en línea aparte. eXeLearning las dibuja al exportar y el estilo les da el color del texto.
+Las fórmulas se escriben en LaTeX, con `\( … \)` dentro del texto y `\[ … \]` en línea aparte, y se activa «Añadir MathJax» en las propiedades del proyecto: las dibuja el MathJax de eXeLearning, y el estilo les da el color del texto.
 
 ## Organización del repositorio
 
@@ -57,12 +57,12 @@ Esta carpeta es una de las del repositorio [exelearning-estilos](../README.md). 
 
 | Ruta | Qué es |
 |---|---|
-| `theme/` | El estilo: `config.xml`, `style.css`, `style.js`, la miniatura, la tipografía (`fonts/`) y los iconos de los iDevices (`icons/`) |
+| `theme/` | El estilo: `config.xml`, `style.css`, `style.js`, la miniatura y la tipografía (`fonts/`). Los iconos de las cajas son los de eXeLearning |
 | `content.xml`, `content.dtd` | El proyecto de eXeLearning del ejemplo |
 | `index.html`, `html/`, `libs/`, `idevices/`, `content/`, `search_index.js` | El ejemplo exportado por eXeLearning |
 | `scripts/ejemplo.py` | El contenido del ejemplo: páginas, cajas, fórmulas y actividades |
-| `scripts/construir_ejemplo.py` | Escribe `content.xml` y exporta el ejemplo con la orden de línea de eXeLearning |
-| `scripts/mathml.cjs` | Añade el MathML de cada fórmula para los lectores de pantalla |
+| `scripts/construir_ejemplo.py` | Escribe un borrador, hace que el editor de eXeLearning lo guarde y lo exporta con su orden de línea |
+| `scripts/normalizar.cjs` | Abre el borrador en el editor de eXeLearning, guarda cada iDevice y descarga el proyecto |
 | `scripts/empaquetar.py` | Construye `dist/consola.zip` y `dist/ecuaciones-segundo-grado.elpx` |
 | `scripts/comprobar.py` | Comprueba metadatos, referencias, fórmulas y paquetes |
 | `scripts/comprobar-navegador.cjs` | Recorre el ejemplo en el navegador: árbol, prompt, barra, soluciones, actividades y móvil |
@@ -73,8 +73,9 @@ Esta carpeta es una de las del repositorio [exelearning-estilos](../README.md). 
 
 ```sh
 cd consola
-# El ejemplo, desde scripts/ejemplo.py (hace falta una copia de eXeLearning con dist/cli.js y bun)
-python3 scripts/construir_ejemplo.py /ruta/a/exelearning
+# El ejemplo, desde scripts/ejemplo.py: hace falta una copia de eXeLearning con
+# `bun run build:static` hecho (editor en dist/static y orden en dist/cli.js) y Playwright
+NODE_PATH=$(npm root -g) python3 scripts/construir_ejemplo.py /ruta/a/exelearning
 # Los paquetes y las comprobaciones
 python3 scripts/empaquetar.py
 python3 scripts/comprobar.py
@@ -92,7 +93,8 @@ Si el ejemplo se edita en eXeLearning, el `content.xml` guardado pasa a ser la f
 - **Estilo** (`theme/style.css`, `theme/style.js`, `theme/config.xml`) y scripts: [GNU AGPL v3 o posterior](LICENSE), la misma licencia que eXeLearning. Juan José de Haro.
 - **Recurso de ejemplo** «Ecuaciones de segundo grado»: [CC BY-SA 4.0](LICENSE-CONTENIDOS). Juan José de Haro.
 - **DejaVu Sans Mono**, del [proyecto DejaVu](https://dejavu-fonts.github.io/), reducida a WOFF2 con los caracteres latinos, los signos matemáticos y los de dibujo de cajas: licencia de Bitstream Vera, con los cambios de DejaVu en dominio público ([texto completo](theme/fonts/LICENSE.txt)).
-- **Iconos de los iDevices**: [Material Symbols](https://fonts.google.com/icons) de Google, tomados del estilo Zen de eXeLearning y coloreados en verde, bajo la [Apache License 2.0](theme/icons/LICENSE.txt).
+- **Iconos de las cajas**: los generales de eXeLearning ([Material Symbols](https://fonts.google.com/icons) de Google); el estilo los pinta de verde.
+- **Fórmulas**: el MathJax que incluye eXeLearning.
 - **Colores**: la paleta del [proyecto Tango](https://en.wikipedia.org/wiki/Tango_Desktop_Project).
 - La idea y la organización del repositorio siguen los estilos de eXeLearning del [Área de Tecnología Educativa del Gobierno de Canarias](https://github.com/ateeducacion), de Ernesto Serrano, como [eXeTexto](https://github.com/ateeducacion/exelearning-style-teletext).
 - Los archivos de eXeLearning y sus bibliotecas (`libs/`, `idevices/`, `content/css/`) conservan sus licencias.

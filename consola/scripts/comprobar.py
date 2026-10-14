@@ -8,7 +8,6 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 import json
-import re
 import xml.etree.ElementTree as ET
 import zipfile
 
@@ -46,26 +45,27 @@ class Referencias(HTMLParser):
             json.loads(datos)
 
 
-formulas = 0
+mathjax = raiz / "libs/exe_math/tex-mml-svg.js"
+assert mathjax.is_file(), "El ejemplo lleva el MathJax de eXeLearning («Añadir MathJax»)"
+con_formulas = 0
 for pagina in [raiz / "index.html", *sorted((raiz / "html").glob("*.html"))]:
     codigo = pagina.read_text()
     analizador = Referencias()
     analizador.pagina = pagina
     analizador.feed(codigo)
-    # Toda fórmula dibujada lleva su MathML para los lectores de pantalla.
-    sin_mathml = re.findall(r'<span class="exe-math-rendered"[^>]*><svg(?![^>]*aria-hidden)', codigo)
-    assert not sin_mathml, f"Fórmulas sin MathML en {pagina.name}"
-    formulas += codigo.count('class="exe-math-rendered"')
-assert formulas > 100, "Las fórmulas del ejemplo están dibujadas"
+    if "\\(" in codigo or "\\[" in codigo:
+        con_formulas += 1
+        assert "exe_math/tex-mml-svg.js" in codigo, f"{pagina.name} tiene fórmulas y no carga MathJax"
+assert con_formulas >= 10, "Las fórmulas del ejemplo están en LaTeX"
 
 with zipfile.ZipFile(raiz / "dist/consola.zip") as paquete:
     nombres = set(paquete.namelist())
     assert {"config.xml", "style.css", "style.js", "screenshot.png", "fonts/LICENSE.txt",
-            "fonts/dejavu-sans-mono.woff2", "fonts/dejavu-sans-mono-bold.woff2", "icons/LICENSE.txt"} <= nombres
-    assert len([n for n in nombres if n.startswith("icons/") and n.endswith(".svg")]) == 50, "Un icono por cada uno de Zen"
+            "fonts/dejavu-sans-mono.woff2", "fonts/dejavu-sans-mono-bold.woff2"} <= nombres
+    assert not any(n.startswith("icons/") for n in nombres), "Los iconos son los de eXeLearning, no copias"
     assert not any(n.startswith("theme/") for n in nombres), "El ZIP lleva el estilo en la raíz"
     assert b"exe-open-exelearning" not in paquete.read("style.js") + paquete.read("style.css"), "El enlace de edición no va en el estilo"
 with zipfile.ZipFile(raiz / "dist/ecuaciones-segundo-grado.elpx") as paquete:
     nombres = set(paquete.namelist())
     assert {"content.xml", "content.dtd", "index.html", "theme/config.xml", "theme/style.css"} <= nombres
-print(f"CORRECTO: {len(paginas)} páginas, {formulas} fórmulas con MathML, referencias locales y paquetes.")
+print(f"CORRECTO: {len(paginas)} páginas, {con_formulas} con fórmulas y MathJax de eXeLearning, referencias locales y paquetes.")

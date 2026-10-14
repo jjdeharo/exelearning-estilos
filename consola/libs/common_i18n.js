@@ -49,7 +49,10 @@ $exe_i18n = {
     "publicDomain": "Dominio público",
     "attachment": "Adjunto",
     "noFilesAttached": "No hay archivos adjuntos.",
-    "fileUnavailable": "Archivo no disponible"
+    "fileUnavailable": "Archivo no disponible",
+    "passScoreNotice": "Minimum score needed to pass this activity: %s",
+    "pagePassScore": "Minimum score to pass: %s",
+    "pagePassEveryActivity": "Each activity must reach its minimum score"
 };
 // The following line should only be used if the ELP contains a hangman game:
 $exe_i18n.exeGames = {

@@ -7,8 +7,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  * Juan José de Haro (@jjdeharo), 2026.
  * DejaVu Sans Mono: licencia de Bitstream Vera y dominio público (fonts/LICENSE.txt).
- * Iconos: Material Symbols de Google, del estilo Zen de eXeLearning,
- * Apache License 2.0 (icons/LICENSE.txt).
+ * Los iconos de las cajas son los Material Symbols que trae eXeLearning.
  */
 
 @font-face {
@@ -222,34 +221,16 @@ body#tinymce pre {
     clear: both;
 }
 
-/* Fórmulas: las de MathJax, ya dibujadas al exportar, toman el color del texto. */
-.exe-content .exe-math-rendered,
+/* Fórmulas: las dibuja el MathJax de eXeLearning y toman el color del texto. */
 .exe-content mjx-container {
     color: var(--cli-brillante);
 }
 
-/* El MathML oculto, para los lectores de pantalla, se coloca respecto a su fórmula:
-   dentro de una tabla desplazable no ensancha la página. */
-.exe-content .exe-math-rendered {
-    position: relative;
-}
-
-/* WebKit no aplica el ancho de 1 px a <math>: se recorta para que no ocupe sitio. */
-.exe-content .exe-math-rendered > math {
-    top: 0;
-    left: 0;
-    max-width: 1px;
-    max-height: 1px;
-    overflow: hidden;
-}
-
-.exe-content .exe-math-rendered[data-display="block"],
+/* Una fórmula en línea aparte más ancha que la pantalla se desplaza dentro de su sitio. */
 .exe-content mjx-container[display="true"] {
-    display: block;
+    max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    margin: .75em 0;
-    text-align: center;
 }
 
 /* Tablas: como la salida de «column -t», con líneas finas. */
@@ -352,10 +333,12 @@ body#tinymce pre {
     line-height: 1.4;
 }
 
+/* Los iconos de eXeLearning se pintan con el color del texto: aquí, el verde. */
 .exe-content .box-icon {
     display: flex;
     flex: 0 0 auto;
     margin: 0;
+    color: var(--cli-verde);
 }
 
 .exe-content .box-icon img,
@@ -1461,7 +1444,7 @@ button.cli-tecla:hover {
         color: #000 !important;
     }
 
-    .exe-content :is(strong, em, a, h2, h3, h4, figcaption, .page-title, .box-title, .package-title, .exe-math-rendered),
+    .exe-content :is(strong, em, a, h2, h3, h4, figcaption, .page-title, .box-title, .package-title, mjx-container),
     #packageLicense,
     #packageLicense a {
         color: #000 !important;

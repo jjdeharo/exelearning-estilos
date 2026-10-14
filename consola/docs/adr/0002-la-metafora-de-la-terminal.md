@@ -13,7 +13,7 @@ El encargo era un estilo que imite la consola de Linux. El estilo Hacker de ATE 
 - **Letra**: DejaVu Sans Mono, la monoespaciada por defecto de la mayoría de las distribuciones. Reducida con `pyftsubset` a latín, signos matemáticos, flechas y dibujo de cajas: unos 32 KB por grosor en WOFF2 (normal y negrita).
 - **Piezas**, cada una con su orden real: el índice como la salida de `tree`, con sus ramas calculadas en `style.js`; el prompt de bash de Debian y Ubuntu (usuario y máquina en verde, ruta en azul) con la ruta de la página en el árbol; la barra de estado de `tmux` para navegar; las etiquetas de arranque de systemd (`[  OK  ]`, `[FAILED]`) para las cajas que se quieren destacar y para los aciertos y fallos del test.
 - **Usuario y máquina neutros**: `aula@exe`, que vale para cualquier recurso y no presupone el género de nadie.
-- **Iconos de los iDevices**: los de Zen (Material Symbols), coloreados en verde Tango, para que el editor siga ofreciendo los mismos iconos.
+- **Iconos de las cajas**: los generales de eXeLearning (Material Symbols), que se pintan con el color del texto; el estilo los pone en verde. El estilo no trae iconos propios: en la primera versión llevaba una copia de los de Zen, retirada para no duplicar lo que eXeLearning ya ofrece.
 - **Las actividades**, con marco de doble línea, como una ventana de `dialog`, para distinguirlas del texto.
 - **Los títulos se leen como texto**: el índice muestra el título de cada página, no su nombre de archivo; los nombres de archivo solo aparecen en el prompt, que es decorativo (`aria-hidden`).
 
