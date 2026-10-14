@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<theme>
+  <name>android</name>
+  <title>Android</title>
+  <version>1.0.0</version>
+  <compatibility>4.0.5</compatibility>
+  <author>Juan José de Haro (@jjdeharo)</author>
+  <license>GNU Affero General Public License v3.0 o posterior</license>
+  <license-url>https://www.gnu.org/licenses/agpl-3.0.html</license-url>
+  <description>El recurso como una aplicación en un móvil Android, con Material Design 3 y la letra Roboto: barra superior con el nombre del recurso y la búsqueda, el índice en un cajón lateral, las cajas como tarjetas y una barra de navegación abajo con Anterior, Inicio, Índice y Siguiente. En pantallas grandes, el móvil se dibuja sobre el escritorio, con su barra de estado, y un botón lo gira entre vertical y horizontal; la orientación elegida se recuerda. En un móvil de verdad, ocupa toda la pantalla. Sigue el tema claro u oscuro del sistema. En el campo «Clase CSS» de una caja se puede escribir md-ok, md-info, md-warn o md-error para darle el color de un contenedor de Material, y md-highlight para enmarcarla. Sin JavaScript o al imprimir, el contenido se lee como una página normal.
+
+Tipografía Roboto, de Google, bajo la Apache License 2.0; el texto completo está en fonts/LICENSE.txt. El estilo no trae iconos propios: las cajas usan los iconos generales de eXeLearning (Material Symbols).</description>
+  <downloadable>1</downloadable>
+</theme>

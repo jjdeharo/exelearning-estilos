@@ -1,0 +1,1454 @@
+/*!
+ * Android — estilo de eXeLearning
+ * -------------------------------
+ * El recurso como una aplicación en un móvil Android, con Material Design 3:
+ * barra superior, índice en un cajón, tarjetas y barra de navegación inferior.
+ * En pantallas grandes, el móvil sobre el escritorio, en vertical u horizontal.
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * Juan José de Haro (@jjdeharo), 2026.
+ * Roboto, de Google: Apache License 2.0 (fonts/LICENSE.txt).
+ * Los iconos de las cajas son los Material Symbols que trae eXeLearning.
+ */
+
+@font-face {
+    font-family: "Roboto";
+    src: url(fonts/roboto-regular.woff2) format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Roboto";
+    src: url(fonts/roboto-medium.woff2) format("woff2");
+    font-weight: 500 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Roboto";
+    src: url(fonts/roboto-italic.woff2) format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+/*
+ * Esquema de color de Material Design 3 a partir del verde de Android (#3ddc84):
+ * claro y oscuro, según el tema del sistema. «aviso» es un color añadido, ámbar.
+ */
+:root {
+    --md-primary: #006d3b;
+    --md-on-primary: #ffffff;
+    --md-primary-container: #96f7b5;
+    --md-on-primary-container: #00210e;
+    --md-secondary: #4f6353;
+    --md-on-secondary: #ffffff;
+    --md-secondary-container: #d2e8d4;
+    --md-on-secondary-container: #0d1f13;
+    --md-tertiary: #3a646f;
+    --md-tertiary-container: #beeaf6;
+    --md-on-tertiary-container: #001f26;
+    --md-error: #ba1a1a;
+    --md-error-container: #ffdad6;
+    --md-on-error-container: #410002;
+    --md-aviso: #7c5800;
+    --md-aviso-container: #ffdea6;
+    --md-on-aviso-container: #271900;
+    --md-surface: #f6fbf4;
+    --md-on-surface: #171d19;
+    --md-on-surface-variant: #414942;
+    --md-outline: #717971;
+    --md-outline-variant: #c1c9bf;
+    --md-surface-container-lowest: #ffffff;
+    --md-surface-container-low: #f0f5ee;
+    --md-surface-container: #eaefe9;
+    --md-surface-container-high: #e4eae3;
+    --md-surface-container-highest: #dfe4dd;
+    --md-scrim: rgba(0, 0, 0, .32);
+    --and-escritorio: radial-gradient(circle at 30% 20%, #e7f1e9, #c6d3c9 70%);
+    --and-cuerpo: #1d1e20;
+    --and-letra: "Roboto", "Noto Sans", "Segoe UI", system-ui, sans-serif;
+    --and-sombra-1: 0 1px 2px rgba(0, 0, 0, .3), 0 1px 3px 1px rgba(0, 0, 0, .15);
+    --and-sombra-3: 0 4px 8px 3px rgba(0, 0, 0, .15), 0 1px 3px rgba(0, 0, 0, .3);
+    color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --md-primary: #7ada9a;
+        --md-on-primary: #00391c;
+        --md-primary-container: #00522b;
+        --md-on-primary-container: #96f7b5;
+        --md-secondary: #b6ccb8;
+        --md-on-secondary: #213527;
+        --md-secondary-container: #374b3c;
+        --md-on-secondary-container: #d2e8d4;
+        --md-tertiary: #a2ceda;
+        --md-tertiary-container: #214c57;
+        --md-on-tertiary-container: #beeaf6;
+        --md-error: #ffb4ab;
+        --md-error-container: #93000a;
+        --md-on-error-container: #ffdad6;
+        --md-aviso: #f5bd48;
+        --md-aviso-container: #5e4200;
+        --md-on-aviso-container: #ffdea6;
+        --md-surface: #0f1511;
+        --md-on-surface: #dfe4dd;
+        --md-on-surface-variant: #c1c9bf;
+        --md-outline: #8b938a;
+        --md-outline-variant: #414942;
+        --md-surface-container-lowest: #0a0f0c;
+        --md-surface-container-low: #171d19;
+        --md-surface-container: #1b211d;
+        --md-surface-container-high: #262b27;
+        --md-surface-container-highest: #303632;
+        --and-escritorio: radial-gradient(circle at 30% 20%, #26302a, #0d120f 70%);
+        --and-cuerpo: #2b2c2f;
+        color-scheme: dark;
+    }
+}
+
+/* ---------- Contenido: exportación y editor ---------- */
+
+.exe-content,
+body#tinymce {
+    --bs-body-color: var(--md-on-surface);
+    --bs-body-bg: var(--md-surface);
+    --bs-body-font-family: var(--and-letra);
+    --bs-link-color: var(--md-primary);
+    --bs-border-color: var(--md-outline-variant);
+    --exe-fx-focus-color: var(--md-primary);
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    font-family: var(--and-letra);
+    font-size: 1rem;
+    line-height: 1.5;
+    letter-spacing: .01em;
+}
+
+body.exe-export {
+    margin: 0;
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    font-family: var(--and-letra);
+}
+
+.exe-content p,
+.exe-content li {
+    margin: 0 0 .75em;
+}
+
+.exe-content strong,
+.exe-content b {
+    font-weight: 500;
+}
+
+.exe-content a,
+body#tinymce a {
+    color: var(--md-primary);
+    text-decoration: underline;
+    text-underline-offset: .2em;
+}
+
+.exe-content :focus-visible,
+.and-girar:focus-visible {
+    outline: .1875rem solid var(--md-secondary);
+    outline-offset: .125rem;
+    box-shadow: none;
+}
+
+.exe-content h2,
+.exe-content h3,
+.exe-content h4,
+.exe-content h5,
+.exe-content h6 {
+    margin: 1.25em 0 .5em;
+    color: var(--md-on-surface);
+    font-family: var(--and-letra);
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.exe-content h2 { font-size: 1.375rem; font-weight: 400; }
+.exe-content h3 { font-size: 1rem; }
+.exe-content :is(h4, h5, h6) { font-size: .875rem; color: var(--md-on-surface-variant); }
+
+.exe-content ul,
+.exe-content ol {
+    padding-left: 1.5rem;
+}
+
+.exe-content li::marker {
+    color: var(--md-primary);
+}
+
+.exe-content mark {
+    padding: 0 .2em;
+    border-radius: .25rem;
+    background: var(--md-aviso-container);
+    color: var(--md-on-aviso-container);
+}
+
+.exe-content hr {
+    margin: 1.5em 0;
+    border: 0;
+    border-top: 1px solid var(--md-outline-variant);
+    opacity: 1;
+}
+
+.exe-content blockquote {
+    margin: 1em 0;
+    padding: .5em 1em;
+    border-radius: .75rem;
+    background: var(--md-surface-container-high);
+}
+
+.exe-content code,
+body#tinymce code {
+    padding: .1em .35em;
+    border-radius: .375rem;
+    background: var(--md-surface-container-highest);
+    color: var(--md-on-surface);
+    font-family: "Roboto Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    font-size: .875em;
+}
+
+.exe-content pre {
+    overflow-x: auto;
+    margin: 0 0 1em;
+    padding: .75rem 1rem;
+    border-radius: .75rem;
+    background: var(--md-surface-container-highest);
+    color: var(--md-on-surface);
+    font-family: "Roboto Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    font-size: .8125rem;
+    line-height: 1.35;
+}
+
+.exe-content pre code {
+    padding: 0;
+    background: none;
+}
+
+.exe-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: .75rem;
+}
+
+.exe-content figure {
+    margin: .25em 0 1em;
+}
+
+.exe-content figcaption {
+    margin-top: .4em;
+    color: var(--md-on-surface-variant);
+    font-size: .75rem;
+    letter-spacing: .03em;
+}
+
+.exe-content .clearfix {
+    clear: both;
+}
+
+/* Fórmulas: las dibuja el MathJax de eXeLearning y toman el color del texto. */
+.exe-content mjx-container {
+    color: var(--md-on-surface);
+}
+
+/* Una fórmula en línea aparte más ancha que la pantalla se desplaza dentro de su sitio. */
+.exe-content mjx-container[display="true"] {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Tablas: como las de Material, con líneas finas entre filas. */
+.exe-content table,
+.exe-content .exe-table {
+    width: auto;
+    max-width: 100%;
+    margin: 1em 0;
+    border: 0;
+    border-collapse: collapse;
+    font-size: .875rem;
+}
+
+.exe-content table thead,
+.exe-content table thead tr {
+    background: none;
+}
+
+.exe-content table tr,
+.exe-content table th,
+.exe-content table td,
+.exe-content .exe-table tr:nth-child(n) td,
+.exe-content .exe-table tbody tr:nth-child(n) th {
+    padding: .5em .75em;
+    border: 0;
+    border-bottom: 1px solid var(--md-outline-variant);
+    background: none;
+    color: var(--md-on-surface);
+    text-align: start;
+    vertical-align: top;
+}
+
+.exe-content table thead :is(th, td),
+.exe-content table th,
+.exe-content .exe-table tbody tr:nth-child(n) th {
+    color: var(--md-on-surface-variant);
+    font-weight: 500;
+}
+
+/* En una pantalla estrecha, la tabla que no cabe se desplaza en horizontal. */
+@media screen and (max-width: 47.99rem) {
+    .exe-content table,
+    .exe-content .exe-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+.and-movil .exe-content table,
+.and-movil .exe-content .exe-table {
+    display: block;
+    overflow-x: auto;
+}
+
+.exe-content table caption {
+    padding: 0 0 .4em;
+    color: var(--md-on-surface-variant);
+    text-align: start;
+    caption-side: top;
+}
+
+/* Bloques de color de eXeLearning, con los contenedores de Material. */
+.exe-content :is(.exe-block-info, .exe-block-warning, .exe-block-alert, .exe-block-danger, .exe-block-success) {
+    padding: .75em 1em;
+    border: 0;
+    border-radius: .75rem;
+    background: var(--md-tertiary-container);
+    color: var(--md-on-tertiary-container);
+}
+
+.exe-content :is(.exe-block-warning, .exe-block-alert) { background: var(--md-aviso-container); color: var(--md-on-aviso-container); }
+.exe-content .exe-block-danger { background: var(--md-error-container); color: var(--md-on-error-container); }
+.exe-content .exe-block-success { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+
+/* ---------- Cajas de los iDevices: tarjetas ---------- */
+
+.exe-content .box {
+    --and-tarjeta: var(--md-surface-container-low);
+    --and-tinta: var(--md-on-surface);
+    --and-acento: var(--md-primary);
+    position: relative;
+    margin: 0 0 1rem;
+    padding: 1rem;
+    border: 0;
+    border-radius: .75rem;
+    background: var(--and-tarjeta);
+    color: var(--and-tinta);
+    box-shadow: var(--and-sombra-1);
+}
+
+.exe-content .box-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-height: 2.5rem;
+    margin: -.25rem 0 .5rem;
+    padding: 0 2.75rem 0 0;
+    border: 0;
+    background: none;
+}
+
+.exe-content .box-head .box-title {
+    margin: 0;
+    padding: 0;
+    color: var(--and-tinta);
+    font-family: var(--and-letra);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: .01em;
+}
+
+/* Los iconos de eXeLearning se pintan con el color del texto: aquí, el de acento. */
+.exe-content .box-icon {
+    display: flex;
+    flex: 0 0 auto;
+    margin: 0;
+    color: var(--and-acento);
+}
+
+.exe-content .box-icon img,
+.exe-content .box-icon .exe-material-icon {
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 0;
+    border-radius: 0;
+}
+
+.exe-content .box-icon .exe-material-icon {
+    background-color: currentColor;
+    -webkit-mask: var(--exe-material-icon-url) center / contain no-repeat;
+    mask: var(--exe-material-icon-url) center / contain no-repeat;
+}
+
+.exe-content .box-content {
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+.exe-content .box-content > :last-child,
+.exe-content .exe-text-activity > :last-child {
+    margin-bottom: 0;
+}
+
+/* Plegar y desplegar: un botón de icono redondo con la flecha de Material. */
+.exe-content .box-toggle {
+    position: absolute;
+    top: 50%;
+    right: -.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-top: -1.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--md-on-surface-variant);
+    cursor: pointer;
+}
+
+.exe-content .box-toggle:hover {
+    background: color-mix(in srgb, var(--and-tinta) 8%, transparent);
+}
+
+.exe-content .box-toggle::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: .5rem;
+    height: .5rem;
+    margin: -.125rem 0 0 -.25rem;
+    border: solid currentColor;
+    border-width: .125rem .125rem 0 0;
+    transform: rotate(-45deg);
+}
+
+.exe-content .box.minimized .box-toggle::before {
+    margin-top: -.375rem;
+    transform: rotate(135deg);
+}
+
+.exe-content .box-toggle span,
+#packageLicense .license-label,
+.exe-content .sr-av {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+}
+
+/* Actividades: tarjeta rellena, sin sombra, para distinguirlas del texto. */
+.exe-content .box:has(.idevice_node:not(.text, .download-source-file)) {
+    --and-tarjeta: var(--md-surface-container-highest);
+    box-shadow: none;
+}
+
+/*
+ * Clases para las cajas (campo «Clase CSS»): md-ok, md-info, md-warn y md-error
+ * dan a la tarjeta el color de un contenedor de Material; md-highlight la enmarca.
+ */
+.exe-content .box.md-ok { --and-tarjeta: var(--md-primary-container); --and-tinta: var(--md-on-primary-container); --and-acento: var(--md-on-primary-container); box-shadow: none; }
+.exe-content .box.md-info { --and-tarjeta: var(--md-tertiary-container); --and-tinta: var(--md-on-tertiary-container); --and-acento: var(--md-on-tertiary-container); box-shadow: none; }
+.exe-content .box.md-warn { --and-tarjeta: var(--md-aviso-container); --and-tinta: var(--md-on-aviso-container); --and-acento: var(--md-on-aviso-container); box-shadow: none; }
+.exe-content .box.md-error { --and-tarjeta: var(--md-error-container); --and-tinta: var(--md-on-error-container); --and-acento: var(--md-on-error-container); box-shadow: none; }
+
+.exe-content .box.md-highlight {
+    --and-tarjeta: var(--md-surface);
+    box-shadow: none;
+    outline: .125rem solid var(--md-primary);
+    outline-offset: -.125rem;
+}
+
+.exe-content .box:is(.md-ok, .md-info, .md-warn, .md-error) a {
+    color: inherit;
+}
+
+/* ---------- Botones, campos y actividades ---------- */
+
+/* Botón relleno de Material: píldora con el color principal. */
+.exe-content .btn,
+.exe-content input[type="button"],
+.exe-content input[type="submit"],
+.exe-content input[type="reset"],
+.exe-content .iDevice_buttons button {
+    --bs-btn-color: var(--md-on-primary);
+    --bs-btn-bg: var(--md-primary);
+    --bs-btn-border-color: var(--md-primary);
+    --bs-btn-hover-color: var(--md-on-primary);
+    --bs-btn-hover-bg: var(--md-primary);
+    --bs-btn-hover-border-color: var(--md-primary);
+    --bs-btn-active-color: var(--md-on-primary);
+    --bs-btn-active-bg: var(--md-primary);
+    --bs-btn-border-radius: 1.25rem;
+    --bs-btn-font-family: var(--and-letra);
+    --bs-btn-font-weight: 500;
+    --bs-btn-focus-box-shadow: none;
+    min-height: 2.5rem;
+    padding: .5rem 1.5rem;
+    border: 0;
+    border-radius: 1.25rem;
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+    font: 500 .875rem/1.25rem var(--and-letra);
+    letter-spacing: .01em;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.exe-content .btn:hover,
+.exe-content input:is([type="button"], [type="submit"], [type="reset"]):hover,
+.exe-content .iDevice_buttons button:hover {
+    box-shadow: var(--and-sombra-1);
+    filter: brightness(1.08);
+}
+
+.exe-content .btn:disabled,
+.exe-content input:is([type="button"], [type="submit"]):disabled {
+    background: color-mix(in srgb, var(--md-on-surface) 12%, transparent);
+    color: color-mix(in srgb, var(--md-on-surface) 38%, transparent);
+    box-shadow: none;
+    filter: none;
+}
+
+/* «Ver solución»: botón tonal, el de las acciones secundarias. */
+.exe-content .iDevice_buttons input.feedbacktooglebutton {
+    background: var(--md-secondary-container);
+    color: var(--md-on-secondary-container);
+}
+
+.exe-content .iDevice_buttons {
+    margin: .75em 0;
+}
+
+.exe-content .feedback.js-feedback {
+    margin: 0 0 .5em;
+    padding: .75rem 1rem .1rem;
+    border-radius: .75rem;
+    background: var(--md-surface-container-highest);
+    color: var(--md-on-surface);
+}
+
+.exe-content .exe-download-package-link a {
+    display: inline-block;
+    padding: .5rem 1.5rem;
+    border-radius: 1.25rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.exe-content input:is([type="text"], [type="number"], [type="search"], [type="email"], [type="url"]),
+.exe-content textarea,
+.exe-content select {
+    min-height: 3rem;
+    padding: .5rem 1rem;
+    border: 1px solid var(--md-outline);
+    border-radius: .25rem;
+    background: transparent;
+    color: var(--md-on-surface);
+    font: 1rem/1.5 var(--and-letra);
+}
+
+.exe-content input:is([type="text"], [type="search"]):focus {
+    border-color: var(--md-primary);
+    outline: 1px solid var(--md-primary);
+}
+
+.exe-content input[type="radio"],
+.exe-content input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: var(--md-primary);
+    vertical-align: -.2em;
+}
+
+/* Cuestionario: aciertos y fallos en los contenedores de Material. */
+.exe-content .form-IDevice .form-feedback-message {
+    margin-top: .75em;
+    padding: .5em 1em;
+    border: 0;
+    border-radius: .5rem;
+    box-shadow: none;
+}
+
+.exe-content .form-IDevice .form-feedback-correct { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+.exe-content .form-IDevice .form-feedback-wrong { background: var(--md-error-container); color: var(--md-on-error-container); }
+
+.exe-content .form-IDevice .score-text {
+    background: none;
+    color: var(--md-on-surface);
+}
+
+.exe-content .form-IDevice .score-text.pass-test { color: var(--md-primary); }
+.exe-content .form-IDevice .score-text.fail-test { color: var(--md-error); }
+
+.exe-content .form-IDevice :is(.FRMP-Suggestion, .FRMP-ShowSuggestion) {
+    border: 0;
+    border-radius: .5rem;
+    background: var(--md-tertiary-container);
+    color: var(--md-on-tertiary-container);
+}
+
+.exe-content .form-IDevice .inline-icon {
+    color: var(--md-on-surface-variant);
+}
+
+.exe-content .form-IDevice :is(.FRMP-Questions, .form-body, .form-instructions, li, .FormView_question) {
+    background: none;
+    color: inherit;
+}
+
+/* Ordenar: elementos de lista de Material, con flechas en botones redondos. */
+.exe-content .exe-sortableList-options {
+    padding-left: 0;
+    list-style: none;
+}
+
+.exe-content .exe-sortableList-options li {
+    margin: 0 0 .5em;
+    padding: .75em 5.5rem .75em 1rem;
+    border: 0;
+    border-radius: .75rem;
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    box-shadow: var(--and-sombra-1);
+}
+
+.exe-content .exe-sortableList li a {
+    width: 2.25rem;
+    height: 2.25rem;
+    margin-top: -1.125rem;
+    right: 2.75rem;
+    border-radius: 50%;
+    background: none;
+    color: var(--md-on-surface-variant);
+    font: 1rem/2.25rem var(--and-letra);
+    text-align: center;
+    text-decoration: none;
+    overflow: hidden;
+}
+
+.exe-content .exe-sortableList li a.down {
+    right: .5rem;
+}
+
+.exe-content .exe-sortableList li a::before {
+    content: "▲";
+    display: block;
+}
+
+.exe-content .exe-sortableList li a.down::before {
+    content: "▼";
+}
+
+.exe-content .exe-sortableList li a:is(:hover, :focus) {
+    background: var(--md-secondary-container);
+    color: var(--md-on-secondary-container);
+}
+
+/* Licencia y «hecho con eXeLearning» */
+#packageLicense {
+    color: var(--md-on-surface-variant);
+}
+
+#packageLicense p {
+    margin: 0;
+}
+
+#packageLicense.propietary {
+    position: absolute;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    height: 0;
+}
+
+/* ---------- La página sin JavaScript: un documento con los colores del estilo ---------- */
+
+.exe-web-site .exe-content {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+}
+
+.exe-content .page-title {
+    margin: 0 0 1.25rem;
+    color: var(--md-on-surface);
+    font-family: var(--and-letra);
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 2rem;
+}
+
+.exe-content .package-title {
+    margin: 0 0 .5rem;
+    color: var(--md-primary);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.exe-web-site .page-counter {
+    margin: 0 0 .25rem;
+    color: var(--md-on-surface-variant);
+    font-size: .75rem;
+    font-weight: 500;
+    letter-spacing: .05em;
+}
+
+.exe-web-site .page-counter strong {
+    font-weight: 500;
+}
+
+.exe-web-site #siteNav ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.exe-web-site #siteNav li {
+    margin: 0;
+}
+
+.exe-web-site #siteNav .other-section {
+    display: block;
+}
+
+.exe-web-site #siteNav a {
+    display: flex;
+    align-items: center;
+    min-height: 3rem;
+    padding: .5rem 1rem;
+    border-radius: 1.5rem;
+    color: var(--md-on-surface-variant);
+    font-size: .875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    text-decoration: none;
+}
+
+.exe-web-site #siteNav ul ul a {
+    padding-left: 2rem;
+}
+
+.exe-web-site #siteNav ul ul ul a {
+    padding-left: 3rem;
+}
+
+.exe-web-site #siteNav a:hover {
+    background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
+}
+
+.exe-web-site #siteNav a.active {
+    background: var(--md-secondary-container);
+    color: var(--md-on-secondary-container);
+}
+
+.exe-web-site main.page {
+    margin: 1.5rem 0;
+}
+
+.exe-web-site .nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin: 1.5rem 0;
+}
+
+.exe-web-site .nav-buttons span.nav-button {
+    visibility: hidden;
+}
+
+#made-with-eXe {
+    position: static;
+    margin: 0;
+}
+
+#made-with-eXe a {
+    display: inline;
+    width: auto;
+    height: auto;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--md-primary);
+    font: inherit;
+    opacity: 1;
+}
+
+#made-with-eXe span {
+    padding: 0;
+}
+
+#skipNav {
+    top: -10rem;
+    z-index: 50;
+    padding: .5rem 1rem;
+    border-radius: 0 0 .75rem .75rem;
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+    font-family: var(--and-letra);
+}
+
+#skipNav:focus {
+    top: 0;
+}
+
+#exe-client-search-results-list ul {
+    padding-left: 0;
+    list-style: none;
+}
+
+#exe-client-search-results-list li {
+    margin-bottom: 1em;
+}
+
+/* ---------- La aplicación: la monta style.js ---------- */
+
+.and-js .exe-web-site .exe-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+}
+
+.and-js .exe-web-site .exe-content > * {
+    min-width: 0;
+}
+
+.and-icono {
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.and-icono svg {
+    display: block;
+}
+
+/* Barra de estado: solo dentro del móvil dibujado. */
+.and-estado {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    height: 2.25rem;
+    padding: 0 1.75rem;
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+    font-size: .875rem;
+    font-weight: 500;
+}
+
+.and-estado-iconos {
+    display: flex;
+    gap: .25rem;
+}
+
+.and-estado-iconos svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Barra superior: menú, nombre del recurso y búsqueda. */
+.and-barra {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    min-height: 4rem;
+    padding: .5rem .25rem;
+    background: var(--md-surface);
+    color: var(--md-on-surface);
+}
+
+.and-barra-titulo {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 .5rem;
+}
+
+.and-barra .package-header {
+    margin: 0;
+}
+
+/* El nombre del recurso, en dos líneas como mucho. */
+.and-barra .package-title {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    color: var(--md-on-surface);
+    font-size: 1.125rem;
+    font-weight: 400;
+    line-height: 1.5rem;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+.and-boton-icono {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--md-on-surface-variant);
+    cursor: pointer;
+}
+
+.and-boton-icono:hover {
+    background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
+}
+
+.and-boton-icono:focus-visible,
+.and-destino:focus-visible {
+    outline: .1875rem solid var(--md-secondary);
+    outline-offset: -.1875rem;
+}
+
+/* Búsqueda: una píldora debajo de la barra superior, con el buscador de eXeLearning. */
+.and-busqueda {
+    padding: 0 1rem .75rem;
+    background: var(--md-surface);
+}
+
+.and-busqueda[hidden] {
+    display: none;
+}
+
+.and-busqueda #exe-client-search-form p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+}
+
+.and-busqueda #exe-client-search-text {
+    flex: 1 1 8rem;
+    min-width: 0;
+    min-height: 3.5rem;
+    padding: 0 1.25rem;
+    border: 0;
+    border-radius: 1.75rem;
+    background: var(--md-surface-container-high);
+    color: var(--md-on-surface);
+    font: 1rem/1.5 var(--and-letra);
+}
+
+.and-busqueda #exe-client-search-submit {
+    min-height: 2.5rem;
+    padding: 0 1.25rem;
+    border: 0;
+    border-radius: 1.25rem;
+    background: var(--md-primary);
+    color: var(--md-on-primary);
+    font: 500 .875rem/1.25rem var(--and-letra);
+    cursor: pointer;
+}
+
+.and-busqueda #exe-client-search-reset {
+    width: auto;
+    height: auto;
+    padding: .5rem .75rem;
+    border-radius: 1.25rem;
+    background: none;
+    color: var(--md-primary);
+    font: 500 .875rem/1.25rem var(--and-letra);
+    text-decoration: none;
+}
+
+.and-busqueda #exe-client-search-reset span {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+}
+
+/* Contenido: la página entre las dos barras. */
+.and-contenido {
+    flex: 1 0 auto;
+    padding: .5rem 1rem 1.5rem;
+    background: var(--md-surface);
+}
+
+.and-js .exe-web-site main.page {
+    margin: 0;
+}
+
+.and-js .exe-web-site .main-header {
+    margin: 0;
+}
+
+.and-js #exe-client-search-results:has(li, p) {
+    margin-bottom: 1.5rem;
+}
+
+.and-pie {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .25rem 1.5rem;
+    margin-top: 2rem;
+    color: var(--md-on-surface-variant);
+    font-size: .75rem;
+}
+
+.and-js .exe-web-site #siteFooter {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* Barra de navegación de Material: cuatro destinos con icono y rótulo. */
+.and-navegacion {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-height: 5rem;
+    padding: .75rem .5rem 1rem;
+    background: var(--md-surface-container);
+}
+
+.and-destino {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 1rem;
+    background: none;
+    color: var(--md-on-surface-variant) !important;
+    font: 500 .75rem/1rem var(--and-letra);
+    letter-spacing: .03em;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+
+.and-indicador {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 2rem;
+    border-radius: 1rem;
+}
+
+.and-destino:hover .and-indicador {
+    background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
+}
+
+/* «Siguiente», el paso habitual, con el indicador encendido. */
+.and-siguiente:not([aria-disabled]) .and-indicador {
+    background: var(--md-secondary-container);
+    color: var(--md-on-secondary-container);
+}
+
+.and-destino[aria-disabled="true"] {
+    opacity: .38;
+    cursor: default;
+}
+
+.and-destino-texto {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* La barra de gestos de Android: solo dentro del móvil dibujado. */
+.and-gestos {
+    display: none;
+}
+
+/* Cajón del índice. */
+.and-velo {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: none;
+    background: var(--md-scrim);
+}
+
+.and-cajon {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 31;
+    overflow-y: auto;
+    width: min(22.5rem, 85%);
+    padding: .75rem;
+    border-radius: 0 1rem 1rem 0;
+    background: var(--md-surface-container-low);
+    color: var(--md-on-surface);
+    transform: translateX(-105%);
+    visibility: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .and-cajon {
+        transition: transform .3s cubic-bezier(.2, 0, 0, 1), visibility 0s .3s;
+    }
+
+    .and-cajon-abierto .and-cajon {
+        transition: transform .3s cubic-bezier(.2, 0, 0, 1);
+    }
+}
+
+.and-cajon-abierto .and-cajon {
+    transform: none;
+    visibility: visible;
+}
+
+.and-cajon-abierto .and-velo {
+    display: block;
+}
+
+.and-cajon-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: 0 0 .5rem 1rem;
+}
+
+.and-cajon-titulo {
+    margin: 0;
+    color: var(--md-on-surface-variant);
+    font-size: .875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+}
+
+/* Un móvil de verdad en horizontal: la navegación, en un raíl a la izquierda. */
+@media screen and (orientation: landscape) and (max-height: 37.99rem) {
+    .and-js .exe-web-site .exe-content {
+        padding-left: 5.5rem;
+    }
+
+    .and-navegacion {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 5.5rem;
+        grid-template-columns: none;
+        grid-auto-rows: min-content;
+        align-content: center;
+        gap: 1rem;
+        min-height: 0;
+        padding: 0;
+    }
+}
+
+/* ---------- El móvil dibujado sobre el escritorio ---------- */
+
+/* En una pantalla pequeña el marco no existe: la página es la pantalla del móvil. */
+.and-movil {
+    display: contents;
+}
+
+.and-camara,
+.and-girar {
+    display: none;
+}
+
+@media screen and (min-width: 50rem) and (min-height: 38rem) {
+    .and-js body.exe-web-site {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow: hidden;
+        background: var(--and-escritorio);
+    }
+
+    /* El cuerpo del teléfono: proporción 9:19,5, con el borde y los botones laterales. */
+    .and-movil {
+        --alto: min(54rem, calc(100dvh - 3rem));
+        position: relative;
+        display: block;
+        flex: 0 0 auto;
+        width: calc(var(--alto) * 9 / 19.5);
+        height: var(--alto);
+        padding: .625rem;
+        border-radius: 3rem;
+        background: var(--and-cuerpo);
+        box-shadow: 0 0 0 .125rem #3b3d40, 0 1.5rem 3rem rgba(0, 0, 0, .35);
+    }
+
+    .and-movil::before,
+    .and-movil::after {
+        content: "";
+        position: absolute;
+        right: -.3rem;
+        width: .25rem;
+        border-radius: 0 .25rem .25rem 0;
+        background: #3b3d40;
+    }
+
+    .and-movil::before { top: 18%; height: 4.5rem; }
+    .and-movil::after { top: 33%; height: 7rem; }
+
+    .and-js .exe-web-site .and-movil .exe-content {
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        border-radius: 2.5rem;
+        background: var(--md-surface);
+    }
+
+    .and-movil .and-estado {
+        display: flex;
+        flex: 0 0 auto;
+    }
+
+    .and-movil .and-barra {
+        position: static;
+        flex: 0 0 auto;
+    }
+
+    /* La página se desplaza dentro de la pantalla del móvil. */
+    .and-movil .and-contenido {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+    }
+
+    .and-movil .and-navegacion {
+        position: static;
+        flex: 0 0 auto;
+        padding-bottom: .25rem;
+    }
+
+    .and-movil .and-gestos {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        height: 1.5rem;
+        background: var(--md-surface-container);
+    }
+
+    .and-movil .and-gestos::before {
+        content: "";
+        width: 6.75rem;
+        height: .25rem;
+        border-radius: .125rem;
+        background: var(--md-on-surface);
+        opacity: .4;
+    }
+
+    /* El cajón y su velo, dentro de la pantalla. */
+    .and-movil :is(.and-velo, .and-cajon) {
+        position: absolute;
+    }
+
+    .and-movil .and-cajon {
+        padding-top: 2.75rem;
+    }
+
+    /* La cámara frontal, centrada arriba. */
+    .and-movil .and-camara {
+        position: absolute;
+        top: 1.25rem;
+        left: 50%;
+        z-index: 40;
+        display: block;
+        width: .875rem;
+        height: .875rem;
+        margin-left: -.4375rem;
+        border-radius: 50%;
+        background: #0b0c0d;
+        box-shadow: inset 0 0 0 .1875rem #1f2124;
+    }
+
+    /* Girar: un botón flotante de Material, fuera del móvil. */
+    .and-girar {
+        position: fixed;
+        right: 2rem;
+        bottom: 2rem;
+        z-index: 50;
+        display: inline-flex;
+        align-items: center;
+        gap: .75rem;
+        min-height: 3.5rem;
+        padding: 0 1.25rem 0 1rem;
+        border: 0;
+        border-radius: 1rem;
+        background: var(--md-primary-container);
+        color: var(--md-on-primary-container);
+        font: 500 .875rem/1.25rem var(--and-letra);
+        box-shadow: var(--and-sombra-3);
+        cursor: pointer;
+    }
+
+    .and-girar:hover {
+        filter: brightness(1.05);
+    }
+
+    /* En horizontal: 19,5:9, la cámara a la izquierda y los botones arriba. */
+    .and-horizontal .and-movil {
+        --ancho: min(70rem, calc(100vw - 16rem), calc((100dvh - 3rem) * 19.5 / 9));
+        width: var(--ancho);
+        height: calc(var(--ancho) * 9 / 19.5);
+    }
+
+    .and-horizontal .and-movil::before,
+    .and-horizontal .and-movil::after {
+        top: -.3rem;
+        right: auto;
+        width: auto;
+        height: .25rem;
+        border-radius: .25rem .25rem 0 0;
+    }
+
+    .and-horizontal .and-movil::before { left: 18%; width: 4.5rem; }
+    .and-horizontal .and-movil::after { left: 33%; width: 7rem; }
+
+    .and-horizontal .and-movil .and-camara {
+        top: 50%;
+        left: 1.25rem;
+        margin: -.4375rem 0 0;
+    }
+
+    .and-horizontal .and-movil .and-estado {
+        padding-left: 3rem;
+    }
+
+    .and-horizontal .and-movil .and-cajon {
+        padding-top: .75rem;
+        padding-left: 2.5rem;
+        width: min(24rem, 45%);
+    }
+
+    .and-horizontal .and-movil .and-contenido {
+        padding-inline: 1rem 1.5rem;
+    }
+
+    /* En horizontal, la barra de navegación pasa a ser un raíl a la izquierda, como
+       indica Material para las pantallas apaisadas: así queda alto para la página. */
+    .and-js.and-horizontal .exe-web-site .and-movil .exe-content {
+        display: grid;
+        grid-template-columns: 6rem minmax(0, 1fr);
+        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+        grid-template-areas:
+            "estado estado"
+            "rail barra"
+            "rail busqueda"
+            "rail contenido"
+            "gestos gestos";
+    }
+
+    .and-horizontal .and-movil .and-estado { grid-area: estado; }
+    .and-horizontal .and-movil .and-barra { grid-area: barra; }
+    .and-horizontal .and-movil .and-busqueda { grid-area: busqueda; }
+    .and-horizontal .and-movil .and-contenido { grid-area: contenido; }
+    .and-horizontal .and-movil .and-gestos { grid-area: gestos; }
+
+    .and-horizontal .and-movil .and-navegacion {
+        grid-area: rail;
+        grid-template-columns: none;
+        grid-auto-rows: min-content;
+        align-content: center;
+        gap: 1rem;
+        min-height: 0;
+        padding: 0 0 0 1.5rem;
+        background: var(--md-surface);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .and-movil {
+            transition: transform .35s cubic-bezier(.2, 0, 0, 1);
+        }
+    }
+
+    .and-movil.and-girando-horizontal { transform: rotate(-90deg); }
+    .and-movil.and-girando-vertical { transform: rotate(90deg); }
+}
+
+/* ---------- Editor ---------- */
+
+#workarea .box-head .box-title,
+#workarea .box-head .content-editable-title :is(h1, [contenteditable="true"]) {
+    color: inherit !important;
+    font-family: var(--and-letra) !important;
+}
+
+/* ---------- Impresión ---------- */
+
+@media print {
+    .and-estado,
+    .and-barra .and-boton-icono,
+    .and-busqueda,
+    .and-navegacion,
+    .and-gestos,
+    .and-cajon,
+    .and-velo,
+    .and-camara,
+    .and-girar,
+    #skipNav,
+    .exe-content .box-toggle,
+    .exe-content .iDevice_buttons,
+    .exe-web-site .nav-buttons {
+        display: none !important;
+    }
+
+    .and-movil {
+        display: contents !important;
+    }
+
+    body.exe-export,
+    .exe-content,
+    .and-contenido {
+        background: #fff !important;
+        color: #000 !important;
+        overflow: visible !important;
+    }
+
+    .and-js .exe-web-site .exe-content {
+        display: block;
+        height: auto !important;
+        min-height: 0;
+    }
+
+    .exe-content .box {
+        box-shadow: none;
+        outline: 1px solid #bbb;
+        break-inside: avoid;
+    }
+}

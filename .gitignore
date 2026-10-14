@@ -11,3 +11,4 @@ dist/
 
 # Los paquetes que publica la web (pages.yml)
 */descargas/
+__pycache__/

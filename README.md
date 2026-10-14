@@ -7,6 +7,7 @@ Estilos para [eXeLearning](https://exelearning.net/) 4.0.5 o posterior, de Juan 
 | Estilo | Qué es | Ejemplo |
 |---|---|---|
 | [Consola](consola/) | El recurso como una terminal de Linux: `tree`, el prompt de bash, la barra de `tmux` y una línea de órdenes con `ls`, `cd`, `grep` y `help` | [Ecuaciones de segundo grado](https://jjdeharo.github.io/exelearning-estilos/consola/) |
+| [Android](android/) | El recurso como una aplicación en un móvil Android, con Material Design 3; en el ordenador, el móvil se gira entre vertical y horizontal | [Ecuaciones de segundo grado](https://jjdeharo.github.io/exelearning-estilos/android/) |
 
 ## Cómo usar un estilo
 
@@ -21,12 +22,14 @@ Los paquetes de cada estilo están en su página de la web (`<estilo>/descargas/
 | Ruta | Qué es |
 |---|---|
 | `index.html` | La portada de la web, con todos los estilos |
-| `<estilo>/` | Un estilo: `theme/` es el estilo y la raíz de la carpeta, el ejemplo exportado. Cada una tiene su README, sus scripts y su registro de decisiones |
+| `<estilo>/` | Un estilo: `theme/` es el estilo y la raíz de la carpeta, el ejemplo exportado. Cada una tiene su README, `scripts/estilo.py` (lo propio del estilo en el ejemplo), sus pruebas en el navegador y su registro de decisiones |
+| `ejemplos/` | El contenido de los ejemplos, común a los estilos |
+| `herramientas/` | Construir el ejemplo con el editor de eXeLearning, empaquetar, comprobar y revisar la accesibilidad |
 | `.github/workflows/pages.yml` | Al subir cambios, empaqueta y comprueba cada estilo y publica la web |
 | `.github/workflows/version.yml` | Al subir una etiqueta `<estilo>-v<versión>`, publica los paquetes de esa versión |
 | `docs/adr/` | Decisiones que afectan a todo el repositorio |
 
-Cada carpeta de estilo tiene que incluir `scripts/empaquetar.py`, que deja el estilo y el ejemplo en `dist/`, y `scripts/comprobar.py`.
+Todo se hace con eXeLearning: el ejemplo lo guarda su editor y lo exporta su orden de línea, las fórmulas las dibuja su MathJax y los iconos de las cajas son los suyos (ver `docs/adr/`).
 
 ## Licencias
 

@@ -11,8 +11,8 @@ En la primera versión, un script escribía el `content.xml` completo, con el HT
 
 ## Decisión
 
-- El contenido vive en `scripts/ejemplo.py`. `construir_ejemplo.py` escribe con él un **borrador** que solo lleva páginas, cajas y los datos de cada iDevice, sin HTML.
-- `scripts/normalizar.cjs` abre el borrador en el **editor de eXeLearning** (la versión estática de la rama `main`, servida en local) con un navegador automático: acepta instalar el estilo, entra en «Editar» y «Guardar» de cada uno de los 40 iDevices y descarga el proyecto. El HTML, los campos y los mensajes los genera así el propio editor de cada iDevice, como si los guardara una persona.
+- El contenido vive en `ejemplos/ecuaciones_segundo_grado.py` (común a los estilos desde el mismo día). `herramientas/construir_ejemplo.py` escribe con él un **borrador** que solo lleva páginas, cajas y los datos de cada iDevice, sin HTML.
+- `herramientas/normalizar.cjs` abre el borrador en el **editor de eXeLearning** (la versión estática de la rama `main`, servida en local) con un navegador automático: acepta instalar el estilo, entra en «Editar» y «Guardar» de cada uno de los 40 iDevices y descarga el proyecto. El HTML, los campos y los mensajes los genera así el propio editor de cada iDevice, como si los guardara una persona.
 - Ese proyecto se exporta con la orden de línea de la misma versión de eXeLearning (`elp:export … elpx`). El `content.xml` del repositorio es el que guardó el editor.
 - Los iconos de las cajas son los Material Symbols de eXeLearning (`mi-…`), todos del catálogo que ofrece el editor.
 - La gráfica de la parábola se dibuja con caracteres, como la terminal «dumb» de gnuplot, en 31 columnas para que quepa en un móvil de 320 px.
@@ -20,8 +20,8 @@ En la primera versión, un script escribía el `content.xml` completo, con el HT
 
 ## Validación
 
-- `normalizar.cjs`: el editor guarda los 40 iDevices de las 13 páginas sin avisos.
-- `comprobar.py`, `comprobar-navegador.cjs` en Chromium, Firefox y WebKit (árbol, prompt, terminal, soluciones, ordenar, test con 10/10, MathJax sin LaTeX a la vista, móvil a 390 y 320 px) y `accesibilidad.cjs` (axe-core).
+- `herramientas/normalizar.cjs`: el editor guarda los 40 iDevices de las 13 páginas sin avisos.
+- `herramientas/comprobar.py`, `comprobar-navegador.cjs` en Chromium, Firefox y WebKit (árbol, prompt, terminal, soluciones, ordenar, test con 10/10, MathJax sin LaTeX a la vista, móvil a 390 y 320 px) y `herramientas/accesibilidad.cjs` (axe-core).
 
 ## Consecuencias
 

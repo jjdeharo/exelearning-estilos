@@ -60,38 +60,30 @@ Esta carpeta es una de las del repositorio [exelearning-estilos](../README.md). 
 | `theme/` | El estilo: `config.xml`, `style.css`, `style.js`, la miniatura y la tipografía (`fonts/`). Los iconos de las cajas son los de eXeLearning |
 | `content.xml`, `content.dtd` | El proyecto de eXeLearning del ejemplo |
 | `index.html`, `html/`, `libs/`, `idevices/`, `content/`, `search_index.js` | El ejemplo exportado por eXeLearning |
-| `scripts/ejemplo.py` | El contenido del ejemplo: páginas, cajas, fórmulas y actividades |
-| `scripts/construir_ejemplo.py` | Escribe un borrador, hace que el editor de eXeLearning lo guarde y lo exporta con su orden de línea |
-| `scripts/normalizar.cjs` | Abre el borrador en el editor de eXeLearning, guarda cada iDevice y descarga el proyecto |
-| `scripts/empaquetar.py` | Construye `dist/consola.zip` y `dist/ecuaciones-segundo-grado.elpx` |
-| `scripts/comprobar.py` | Comprueba metadatos, referencias, fórmulas y paquetes |
-| `scripts/comprobar-navegador.cjs` | Recorre el ejemplo en el navegador: árbol, prompt, barra, soluciones, actividades y móvil |
-| `scripts/accesibilidad.cjs` | Revisa la accesibilidad de cada página con axe-core |
+| `scripts/estilo.py` | Lo propio de este estilo en el ejemplo común: presentación, cómo moverse, clases y créditos |
+| `scripts/comprobar-navegador.cjs` | Recorre el ejemplo en el navegador: árbol, prompt, barra, terminal, soluciones, actividades y móvil |
 | `docs/adr/` | Registro de decisiones |
 
 ## Construir y comprobar
 
+El contenido del ejemplo (`ejemplos/`) y las herramientas (`herramientas/`) son comunes a los estilos y están en la raíz del repositorio. Desde allí:
+
 ```sh
-cd consola
-# El ejemplo, desde scripts/ejemplo.py: hace falta una copia de eXeLearning con
-# `bun run build:static` hecho (editor en dist/static y orden en dist/cli.js) y Playwright
-NODE_PATH=$(npm root -g) python3 scripts/construir_ejemplo.py /ruta/a/exelearning
-# Los paquetes y las comprobaciones
-python3 scripts/empaquetar.py
-python3 scripts/comprobar.py
-python3 -m http.server 1315 --bind 127.0.0.1
-NODE_PATH=$(npm root -g) node scripts/comprobar-navegador.cjs http://localhost:1315/ chromium   # también firefox y webkit
-NODE_PATH=$(npm root -g) node scripts/accesibilidad.cjs http://localhost:1315/
+# Hace falta una copia de eXeLearning con `bun run build:static` hecho y Playwright
+NODE_PATH=$(npm root -g) python3 herramientas/construir_ejemplo.py consola /ruta/a/exelearning
+python3 herramientas/empaquetar.py consola
+python3 herramientas/comprobar.py consola
+python3 -m http.server 8080
+NODE_PATH=$(npm root -g) node consola/scripts/comprobar-navegador.cjs http://localhost:8080/consola/ chromium   # también firefox y webkit
+NODE_PATH=$(npm root -g) node herramientas/accesibilidad.cjs http://localhost:8080/consola/
 ```
 
-Para regenerar la miniatura del estilo, se añade `CAPTURA=theme/screenshot.png,screenshot.png,captura.png` delante de la comprobación en el navegador y se vuelve a empaquetar.
-
-Si el ejemplo se edita en eXeLearning, el `content.xml` guardado pasa a ser la fuente y `scripts/ejemplo.py` queda como el punto de partida.
+Para regenerar la miniatura del estilo, se añade `CAPTURA=theme/screenshot.png,screenshot.png,captura.png` delante de la comprobación en el navegador, ejecutada desde `consola/`, y se vuelve a empaquetar.
 
 ## Créditos y licencias
 
-- **Estilo** (`theme/style.css`, `theme/style.js`, `theme/config.xml`) y scripts: [GNU AGPL v3 o posterior](LICENSE), la misma licencia que eXeLearning. Juan José de Haro.
-- **Recurso de ejemplo** «Ecuaciones de segundo grado»: [CC BY-SA 4.0](LICENSE-CONTENIDOS). Juan José de Haro.
+- **Estilo** (`theme/style.css`, `theme/style.js`, `theme/config.xml`) y scripts: [GNU AGPL v3 o posterior](../LICENSE), la misma licencia que eXeLearning. Juan José de Haro.
+- **Recurso de ejemplo** «Ecuaciones de segundo grado»: [CC BY-SA 4.0](../LICENSE-CONTENIDOS). Juan José de Haro.
 - **DejaVu Sans Mono**, del [proyecto DejaVu](https://dejavu-fonts.github.io/), reducida a WOFF2 con los caracteres latinos, los signos matemáticos y los de dibujo de cajas: licencia de Bitstream Vera, con los cambios de DejaVu en dominio público ([texto completo](theme/fonts/LICENSE.txt)).
 - **Iconos de las cajas**: los generales de eXeLearning ([Material Symbols](https://fonts.google.com/icons) de Google); el estilo los pinta de verde.
 - **Fórmulas**: el MathJax que incluye eXeLearning.

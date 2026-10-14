@@ -29,12 +29,13 @@ jobs:
           for config in */theme/config.xml; do
             estilo="$(dirname "$(dirname "$config")")"
             echo "== $estilo"
-            (cd "$estilo" && python3 scripts/empaquetar.py && python3 scripts/comprobar.py)
+            python3 herramientas/empaquetar.py "$estilo"
+            python3 herramientas/comprobar.py "$estilo"
             mkdir -p "$estilo/descargas"
             cp "$estilo"/dist/* "$estilo/descargas/"
             rm -rf "$estilo/dist"
           done
-          rm -rf .git .github
+          rm -rf .git .github herramientas ejemplos
 
       - name: Preparar la web
         uses: actions/upload-pages-artifact@v3

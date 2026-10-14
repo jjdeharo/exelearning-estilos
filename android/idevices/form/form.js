@@ -1,0 +1,2004 @@
+/**
+ * Form iDevice
+ *
+ * Released under Attribution-ShareAlike 4.0 International License.
+ * Author: SDWEB - Innovative Digital Solutions
+ *
+ * License: http://creativecommons.org/licenses/by-sa/4.0/
+ */
+var $form = {
+    ideviceId: '',
+    /**
+     * Live instance data by iDevice id, so the SCORM bootstrap can find the
+     * very object the activity's controls are bound to. See resolveInstance().
+     */
+    instances: {},
+    checkAddBtnAnswersId: 'checkAddBtnAnswers',
+    iconSingleSelection: 'rule',
+    iconMultipleSelection: 'checklist_rtl',
+    iconTrueFalse: 'rule',
+    iconDropdown: 'expand_more',
+    iconFill: 'horizontal_rule',
+    /**
+     * Fallback texts, used by mergeFields() for any key the saved content does
+     * not carry — and for all of them when it carries no `msgs` at all.
+     *
+     * English, and word for word the source strings the edition passes through
+     * c_() (edition/form.js refreshTranslations). These are literals because
+     * this file runs inside the exported package, where c_() does not exist; so
+     * the source language is the only honest fallback. They used to be Spanish,
+     * which imposed Spanish on every project whose content missed a key.
+     */
+    msgs: {
+        msgScoreScorm:
+            "The score can't be saved because this page is not part of a SCORM package.",
+        msgYouScore: 'You scores is',
+        msgScore: 'Score',
+        msgWeight: 'Weight',
+        msgYouLastScore: 'The last score saved is',
+        msgOnlySaveScore: 'You can only save the score once!',
+        msgOnlySave: 'You can only save once',
+        msgOnlySaveAuto:
+            'Your score will be saved after each question. You can only play once.',
+        msgSaveAuto:
+            'Your score will be automatically saved after each question.',
+        msgSeveralScore: 'You can save the score as many times as you want',
+        msgPlaySeveralTimes:
+            'You can do this activity as many times as you want',
+        msgActityComply: 'You have already done this activity.',
+        msgUncompletedActivity: 'Incomplete activity',
+        msgSuccessfulActivity: 'Activity: Passed. Score: %s',
+        msgUnsuccessfulActivity: 'Activity: Not passed. Score: %s',
+        msgTypeGame: 'Form',
+        msgStartGame: 'Click here to start',
+        msgTime: 'Time per question',
+        msgSaveScore: 'Save score',
+        msgResult: 'Result',
+        msgCheck: 'Check',
+        msgReset: 'Reset',
+        msgShowAnswers: 'Show answers',
+        msgTestResultPass: 'Congratulations! You passed the test',
+        msgTestResultNotPass: 'Sorry. You failed the test',
+        msgTrueFalseHelp: 'Select whether the statement is true or false',
+        msgDropdownHelp: 'Choose the correct answer among the options proposed',
+        msgFillHelp: 'Fill in the blanks with the appropriate word',
+        msgSingleSelectionHelp: 'Multiple choice with only one correct answer',
+        msgMultipleSelectionHelp:
+            'Multiple choice with multiple corrects answers',
+        msgPlayStart: 'Click here to start',
+        msgTrue: 'True',
+        msgFalse: 'False',
+        msgOk: 'Correct',
+        msgKO: 'Incorrect',
+        msgSuggestion: 'Suggestion',
+        msgHide: 'Hide',
+    },
+
+    scormAPIwrapper: 'libs/SCORM_API_wrapper.js',
+    scormFunctions: 'libs/SCOFunctions.js',
+
+    renderView: function (data, accesibility, template, ideviceId) {
+        const ldata = this.updateConfig(data, ideviceId);
+        let display = $('body').hasClass('exe-export') ? 'none' : '';
+        // Automatic mode only. There, "Comprobar" is also what publishes the
+        // grade, so it takes the author's wording for it. In manual mode the
+        // save button is a separate control with that same wording, and giving
+        // both the same label would leave the learner with two identical
+        // buttons doing different things.
+        if ($('body').hasClass('exe-scorm') && ldata.isScorm === 1) {
+            ldata.msgs.msgCheck = ldata.textButtonScorm;
+        }
+
+        const json = JSON.stringify({});
+        const addBtnAnswers = ldata.addBtnAnswers;
+        const timedisplay = ldata.time > 0 ? 'flex' : 'none';
+        const timebody = ldata.time > 0 ? 'none' : 'block';
+        const time = this.formatTime(ldata.time * 60);
+        const htmlContent = `<div class="game-evaluation-ids js-hidden" data-id="${ldata.id}" data-evaluationb="${ldata.evaluation}" data-evaluationid="${ldata.evaluationID}"></div>
+            <div id="frmMainContainer-${ldata.id}" class="form-IDevice" data-id="${ldata.id}">
+                <div class="form-Data js-hidden">${json}</div>
+                ${ldata.eXeFormInstructions ? `<div class="form-instructions">${ldata.eXeFormInstructions}</div>` : ''}
+                <div class="FRMP-GameScoreBoard" style="display:${timedisplay};">
+                    <div>
+                        <strong><span class="sr-av">${ldata.msgs.msgTime}:</span></strong>
+                        <span id="frmPTime-${ldata.id}">${time}</span>
+                    </div>
+                </div>
+                <div class="FRMP-StartGame" id="frmStartGameDiv-${ldata.id}" style="display:${timedisplay};">
+                      <button  id="frmStartGame-${ldata.id}" type="button" class="btn btn-primary">${ldata.msgs.msgPlayStart}</button>
+                </div>
+                <div class="form-body" id="frmBody-${ldata.id}" style="display:${timebody};">
+                    <div class="FRMP-Questions">
+                        <div id="form-questions-${ldata.id}" > </div>
+                        <div id="frmCover-${ldata.id}" class="FRMP-Cover"> </div>
+                    </div>
+                    <div id="resultsContainer-${ldata.id}" class="form-results-container inline">
+                        <div id="form-score-${ldata.id}" class="score-text">${ldata.msgs.msgScore}.</div>
+                        <div id="form-result-test-${ldata.id}" class="score-text phrase-score"></div>
+                    </div>
+                    <div class="form-buttons-container inline">
+                        <input id="form-button-check-${ldata.id}" class="btn btn-primary" type="button" value="${ldata.msgs.msgCheck}"
+                            data-id="${ldata.id}" />
+                        <input id="form-button-reset-${ldata.id}" type="button" value="${ldata.msgs.msgReset}"
+                            data-id="${ldata.id}" class="btn btn-primary"  style="display:none" />
+                        ${
+                            addBtnAnswers
+                                ? `<input id="form-button-show-answers-${ldata.id}" class="btn btn-primary" type="button" value="${ldata.msgs.msgShowAnswers}"
+                            data-id="${ldata.id}" style="display: ${display}" />`
+                                : ''
+                        }
+
+                    </div>
+                </div>
+                ${$exeDevices.iDevice.gamification.scorm.addButtonScoreNew(ldata)}
+                ${ldata.eXeIdeviceTextAfter ? `<div class="form-instructions">${ldata.eXeIdeviceTextAfter}</div>` : ''}
+            </div>
+            ${$form.extractMediaElements(data.questionsData)}
+            `;
+        return template.replace('{content}', htmlContent);
+    },
+
+    mergeFields(obj1, obj2) {
+        if (!obj1) return obj2;
+        Object.keys(obj2).forEach((key) => {
+            if (!(key in obj1)) obj1[key] = obj2[key];
+        });
+        return obj1;
+    },
+
+    updateConfig: function (odata, ideviceId) {
+        this.isInExe = eXe.app.isInExe();
+        this.idevicePath = this.isInExe
+            ? eXe.app.getIdeviceInstalledExportPath('form')
+            : $('.idevice_node.form').eq(0).attr('data-idevice-path');
+        const data = JSON.parse(JSON.stringify(odata || {}));
+        data.msgs = $form.mergeFields(data.msgs, $form.msgs);
+        data.id = ideviceId || data.ideviceId || data.id;
+        data.evaluation = data.evaluation || false;
+        data.evaluationID = data.evaluationID || '';
+        data.time = data.time || 0;
+        // Always true: activities may be replayed, whatever an older resource
+        // stored. common.js forces it anyway on the first registration, so
+        // reading the saved value here only made the two disagree in between.
+        data.repeatActivity = true;
+        data.textButtonScorm =
+            data.scorm && data.scorm.buttonTextSave
+                ? data.scorm.buttonTextSave
+                : data.msgs.msgSaveScore;
+        // The stored mode wins and is kept as it is: 2 means the learner owns
+        // the save button. Only when there is no stored mode does the legacy
+        // `scorm.saveScore` boolean decide, and it can only ever say automatic.
+        let lscorm = data.scorm && data.scorm.saveScore ? 1 : 0;
+        data.isScorm = Number(data.isScorm) > 0 ? Number(data.isScorm) : lscorm;
+        data.weighted = data.weighted ?? 100;
+        const title =
+            $('#' + data.id)
+                .closest('article')
+                .find('header .box-title')
+                .text() || '';
+        const $idevices = $('.idevice_node');
+        const index = $idevices.index($('#' + data.id)) + 1;
+        data.ideviceNumber = index;
+        data.isInExe = this.isInExe;
+        data.idevicePath = this.idevicePath;
+        data.title = title;
+        data.gameStarted = false;
+        data.idevice = 'form-IDevice';
+        data.numberQuestions = data.questionsData
+            ? data.questionsData.length
+            : 0;
+        data.eXeIdeviceTextAfter = data.eXeIdeviceTextAfter ?? '';
+        data.totalQuestions = 0;
+        data.rightQuestions = 0;
+        data.wrongQuestions = 0;
+        data.showSlider = data.showSlider ?? false;
+        data.addBtnAnswers = data.addBtnAnswers ?? true;
+        data.scorerp = 0;
+        data.main = 'frmMainContainer-' + data.id;
+        data.percentageQuestions = data.percentageQuestions ?? 100;
+        data.questionsRandom = data.questionsRandom ?? false;
+        data.questionsData =
+            $exeDevices.iDevice.gamification.helpers.getQuestions(
+                data.questionsData,
+                data.percentageQuestions,
+                data.questionsRandom
+            );
+
+        return data;
+    },
+
+    /**
+     * Json idevice api function
+     * Engine execution order: 2
+     *
+     * Add the behavior and other functionalities to idevice
+     *
+     * @param {Object} data
+     * @param {Number} accesibility
+     * @returns {Boolean}
+     */
+    renderBehaviour: function (data, accesibility, ideviceId) {
+        const ldata = this.updateConfig(data, ideviceId);
+        const addBtnAnswers = ldata.addBtnAnswers;
+        if (!ldata.questionsData.length) return;
+        const questionsHtml = $form.getHtmlFormView(ldata.questionsData, ldata);
+        $('#form-questions-' + ldata.id).empty();
+        $('#form-questions-' + ldata.id).append(questionsHtml);
+        // The instructions are inside the main container, so the notice goes
+        // before what follows them: below the instructions, above the form.
+        $exeDevices.iDevice.gamification.report.showPassScoreNotice(
+            ldata,
+            '#frmMainContainer-' + ldata.id + ' > .FRMP-GameScoreBoard'
+        );
+        const bindBehaviour = () => {
+            $form.setBehaviourButtonResetQuestions(ldata);
+            $form.setBehaviourButtonCheckQuestions(ldata);
+            $form.setBehaviourButtonSendScore(ldata);
+            if (addBtnAnswers) $form.setBehaviourButtonShowAnswers(ldata);
+            $form.setBehaviourOptions(ldata);
+            $form.hideScore(ldata.id);
+            $form.setBehaviourTest(ldata);
+            if (ldata.showSlider) {
+                $form.addEventsSlideShow(ldata);
+            }
+        };
+        // The questions were just appended into a descendant of this element, so
+        // it is normally already in the document. Binding here instead of only
+        // from the poll closes a window of up to 200 ms in which "Comprobar" is
+        // rendered but has no click handler: a learner clicking in that window
+        // gets no score, no feedback and no error. The poll stays as the
+        // fallback for the case the element genuinely is not there yet.
+        if ($(`[id="${ldata.id}"]`).length) {
+            bindBehaviour();
+        } else {
+            const interval = setInterval(() => {
+                if ($(`[id="${ldata.id}"]`).length) {
+                    clearInterval(interval);
+                    bindBehaviour();
+                }
+            }, 200);
+        }
+        const $ideviceReference = $(`[id="${ldata.id}"]`);
+        if (!$ideviceReference.length) return;
+        const $showAnswersButton = $('#form-button-show-answers-' + ldata.id);
+        if ($showAnswersButton.length) $showAnswersButton.hide();
+        $('#frmMainContainer-' + ldata.id)
+            .find('LI.FormView_question')
+            .each((_, question) => {
+                const $question = $(question);
+                $question.removeAttr('draggable');
+                const questionType = $question.attr('activity-type');
+                const helpTexts = {
+                    selection:
+                        $question.attr('selection-type') === 'single'
+                            ? ldata.msgs.msgSingleSelectionHelp
+                            : ldata.msgs.msgMultipleSelectionHelp,
+                    dropdown: ldata.msgs.msgDropdownHelp,
+                    'true-false': ldata.msgs.msgTrueFalseHelp,
+                    fill: ldata.msgs.msgFillHelp,
+                };
+                const helptext = helpTexts[questionType] || '';
+                if (helptext) {
+                    $question.prepend(
+                        `<span class="inline-icon help-icon" title="${helptext}"></span>`
+                    );
+                }
+            });
+        // Add event handler for suggestion toggle
+        $('#frmMainContainer-' + ldata.id).on(
+            'click',
+            '.FRMP-ShowSuggestion',
+            function (e) {
+                e.preventDefault();
+                const $link = $(this);
+                const $question = $link.closest('.FormView_question');
+                const $suggestion = $question.find('.FRMP-Suggestion');
+                const $icon = $link.find('.FRMP-SuggestionIcon');
+                $suggestion.slideToggle('fast', function () {
+                    if ($suggestion.is(':visible')) {
+                        $icon.attr(
+                            'src',
+                            $icon
+                                .attr('src')
+                                .replace('showsuggestion', 'hidesuggestion')
+                        );
+                        $icon.attr('alt', ldata.msgs.msgHide);
+                    } else {
+                        $icon.attr(
+                            'src',
+                            $icon
+                                .attr('src')
+                                .replace('hidesuggestion', 'showsuggestion')
+                        );
+                        $icon.attr('alt', ldata.msgs.msgSuggestion);
+                    }
+
+                    if (ldata.showSlider) {
+                        $form.resizeSlideShow(ldata);
+                    }
+                });
+            }
+        );
+        const $buttonsContainer = $('#frmMainContainer-' + ldata.id).find(
+            '.form-buttons-container'
+        );
+        if (!$('body').hasClass('exe-export'))
+            $buttonsContainer.css('display', '');
+        if (!$('html').is('#exe-index')) {
+            this.scormAPIwrapper = '../libs/SCORM_API_wrapper.js';
+            this.scormFunctions = '../libs/SCOFunctions.js';
+        }
+
+        // The object the Comprobar button is bound to. The SCORM bootstrap must
+        // reach this very object, never a copy of it — see `instances`.
+        $form.instances[ldata.id] = ldata;
+
+        if (
+            document.body.classList.contains('exe-scorm') &&
+            ldata.isScorm > 0
+        ) {
+            // Do NOT gate on init()'s return value. Inside a SCORM package
+            // loadPage() opens the session first, and an already-open session
+            // is the normal case, not a failure; gating here sent the working
+            // path down the wrapper-loading fallback.
+            if (typeof window.scorm !== 'undefined') {
+                $form.initSCORM(ldata);
+            } else {
+                this.loadSCORM_API_wrapper(ldata);
+            }
+        } else if (ldata.isScorm > 0) {
+            $exeDevices.iDevice.gamification.scorm.registerActivity(ldata);
+        }
+
+        if (
+            ldata.evaluation &&
+            ldata.evaluationID &&
+            ldata.evaluationID.length > 4
+        ) {
+            ldata.idevicePath = this.idevicePath;
+            $exeDevices.iDevice.gamification.report.updateEvaluationIcon(
+                ldata,
+                this.isInExe
+            );
+        }
+
+        const dataString = JSON.stringify(ldata);
+        if ($exeDevices.iDevice.gamification.math.hasLatex(dataString)) {
+            $exeDevices.iDevice.gamification.math.updateLatex('.form-IDevice');
+        }
+    },
+    extractMediaElements: function (items) {
+        if (!Array.isArray(items)) return '';
+        const tmp = document.createElement('div');
+        const mediaUrls = new Set();
+        const fullElements = new Set();
+        const extractFromHTML = (htmlContent) => {
+            if (!htmlContent || typeof htmlContent !== 'string') return;
+            tmp.innerHTML = htmlContent;
+            tmp.querySelectorAll('img').forEach((el) => {
+                fullElements.add(el.outerHTML);
+                const src = el.getAttribute('src');
+                if (
+                    src &&
+                    !src.startsWith('http://') &&
+                    !src.startsWith('https://') &&
+                    !src.startsWith('data:')
+                ) {
+                    mediaUrls.add(JSON.stringify({ type: 'img', url: src }));
+                }
+            });
+            tmp.querySelectorAll('audio, video').forEach((el) => {
+                fullElements.add(el.outerHTML);
+                const src = el.getAttribute('src');
+                if (
+                    src &&
+                    !src.startsWith('http://') &&
+                    !src.startsWith('https://')
+                ) {
+                    mediaUrls.add(
+                        JSON.stringify({
+                            type: el.tagName.toLowerCase(),
+                            url: src,
+                        })
+                    );
+                }
+
+                el.querySelectorAll('source').forEach((source) => {
+                    const srcSource = source.getAttribute('src');
+                    if (
+                        srcSource &&
+                        !srcSource.startsWith('http://') &&
+                        !srcSource.startsWith('https://')
+                    ) {
+                        mediaUrls.add(
+                            JSON.stringify({
+                                type: el.tagName.toLowerCase(),
+                                url: srcSource,
+                            })
+                        );
+                    }
+                });
+            });
+            tmp.querySelectorAll('a[href]').forEach((el) => {
+                const href = el.getAttribute('href');
+                if (
+                    href &&
+                    !href.startsWith('http://') &&
+                    !href.startsWith('https://') &&
+                    !href.startsWith('#') &&
+                    !href.startsWith('mailto:')
+                ) {
+                    if (/\.[a-zA-Z0-9]{2,4}$/.test(href)) {
+                        mediaUrls.add(
+                            JSON.stringify({ type: 'file', url: href })
+                        );
+                    }
+                }
+            });
+            tmp.innerHTML = '';
+        };
+        for (const question of items) {
+            // Extract from baseText (all question types have this)
+            extractFromHTML(question.baseText);
+            // Extract from answers (for selection type questions)
+            // answers is array of [isCorrect:boolean, text:string]
+            if (question.answers && Array.isArray(question.answers)) {
+                question.answers.forEach((answer) => {
+                    if (Array.isArray(answer) && answer.length > 1) {
+                        // answer[1] is the text
+                        extractFromHTML(answer[1]);
+                    }
+                });
+            }
+
+            // Extract from feedbackRight and feedbackWrong (all question types can have these)
+            extractFromHTML(question.feedbackRight);
+            extractFromHTML(question.feedbackWrong);
+            // Note: Other fields like wrongAnswersValue (dropdown), answer (true-false),
+            // capitalization/strict (fill) don't contain HTML, so we don't need to process them
+        }
+
+        let hiddenLinks = '';
+        const urlsArray = Array.from(mediaUrls).map((json) => JSON.parse(json));
+        urlsArray.forEach((media, index) => {
+            hiddenLinks += `<a href="${media.url}" class="js-hidden form-media-${media.type}">${index}</a>`;
+        });
+        // Combine full elements and hidden links
+        const mediaHtml = `<div class="questionsMedia" style="display:none">${[...fullElements].join('')}${hiddenLinks}</div>`;
+        return mediaHtml;
+    },
+
+    replaceResourceDirectoryPaths(data, htmlString) {
+        const $node = $('#' + data.ideviceId);
+        const isInExe = eXe.app.isInExe();
+        if (isInExe || $node.length == 0) return htmlString;
+        let dir = $('html').is('#exe-index')
+            ? 'content/resources/' + data.ideviceId + '/'
+            : '../content/resources/' + data.ideviceId + '/';
+        const custom = $('html').is('#exe-index') ? 'custom/' : '../custom/';
+        if (!dir.endsWith('/')) dir += '/';
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlString, 'text/html');
+        doc.querySelectorAll(
+            'img[src], video[src], audio[src], a[href]'
+        ).forEach((el) => {
+            const attr = el.hasAttribute('src') ? 'src' : 'href';
+            let val = el.getAttribute(attr).trim();
+            val = val.replace(/\\/g, '/').replace(/\/+/g, '/');
+            let pathname = val;
+            try {
+                const baseURL =
+                    window.location.origin === 'null' ||
+                    window.location.protocol === 'file:'
+                        ? window.location.href
+                        : window.location.origin;
+                const u = new URL(val, baseURL);
+                pathname = u.pathname;
+            } catch {
+                pathname = val;
+            }
+
+            pathname = pathname.replace(/\\/g, '/').replace(/\/+/g, '/');
+            if (/^\/?files\//.test(pathname)) {
+                if (pathname.indexOf('file_manager') === -1) {
+                    const filename = pathname.split('/').pop() || '';
+                    el.setAttribute(attr, dir + filename);
+                } else {
+                    const fileManagerIndex = pathname.indexOf('file_manager/');
+                    if (fileManagerIndex !== -1) {
+                        const relativePath = pathname.substring(
+                            fileManagerIndex + 'file_manager/'.length
+                        );
+                        el.setAttribute(attr, custom + relativePath);
+                    } else {
+                        const filename = pathname.split('/').pop() || '';
+                        el.setAttribute(attr, custom + filename);
+                    }
+                }
+            }
+        });
+        return doc.body.innerHTML;
+    },
+
+    addEventsSlideShow: function (data) {
+        const mOptions = data;
+        const instance = data.id;
+        mOptions.current = 0;
+        function clearPreviousMathInWrapper(wrapperEl) {
+            if (!wrapperEl || typeof MathJax === 'undefined') return;
+            try {
+                if (typeof MathJax.typesetClear === 'function') {
+                    MathJax.typesetClear([wrapperEl]);
+                    return;
+                }
+            } catch (e) {}
+
+            try {
+                wrapperEl
+                    .querySelectorAll('mjx-container')
+                    .forEach(function (n) {
+                        n.remove();
+                    });
+                wrapperEl
+                    .querySelectorAll('span.MathJax, div.MathJax')
+                    .forEach(function (n) {
+                        n.remove();
+                    });
+            } catch (e) {}
+        }
+        if (mOptions.showSlider) {
+            const $slideshow = $('#frmMainContainer-' + instance).find(
+                '.FRMP-SlideshowContainer'
+            );
+            const $wrapper = $slideshow.find('.FRMP-SlideshowWrapper');
+            const $slides = $wrapper.children();
+            const total = $slides.length;
+            if (total > 1) {
+                $wrapper.css({ position: 'relative', overflow: 'hidden' });
+                const firstHeight = $slides.eq(0).outerHeight(true);
+                $wrapper.css('height', firstHeight);
+                $slideshow.css(
+                    'height',
+                    firstHeight +
+                        $slideshow
+                            .find('.FRMP-SlideshowControls')
+                            .outerHeight(true)
+                );
+                $slides
+                    .css({
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                    })
+                    .hide()
+                    .eq(0)
+                    .show();
+                function goTo(index, direction) {
+                    const nextIndex = (index + total) % total;
+                    const $currentSlide = $slides.eq(mOptions.current);
+                    const $nextSlide = $slides.eq(nextIndex);
+                    if (direction === 'next') {
+                        $currentSlide.animate(
+                            { left: '-100%' },
+                            200,
+                            function () {
+                                $(this).hide().css({ left: 0 });
+                            }
+                        );
+                        $nextSlide
+                            .css({ left: '100%' })
+                            .show()
+                            .animate({ left: 0 }, 200, function () {
+                                const newH = $nextSlide.outerHeight(true);
+                                $wrapper.animate({ height: newH }, 200);
+                                $slideshow.animate(
+                                    {
+                                        height:
+                                            newH +
+                                            $slideshow
+                                                .find('.FRMP-SlideshowControls')
+                                                .outerHeight(true),
+                                    },
+
+                                    300
+                                );
+                            });
+                    } else {
+                        $currentSlide.animate(
+                            { left: '100%' },
+                            200,
+                            function () {
+                                $(this).hide().css({ left: 0 });
+                            }
+                        );
+                        $nextSlide
+                            .css({ left: '-100%' })
+                            .show()
+                            .animate({ left: 0 }, 200, function () {
+                                const newH = $nextSlide.outerHeight(true);
+                                $wrapper.animate({ height: newH }, 200);
+                                $slideshow.animate(
+                                    {
+                                        height:
+                                            newH +
+                                            $slideshow
+                                                .find('.FRMP-SlideshowControls')
+                                                .outerHeight(true),
+                                    },
+
+                                    300
+                                );
+                            });
+                    }
+
+                    mOptions.current = nextIndex;
+                    $slideshow
+                        .find('#frmSlideNumber-' + instance)
+                        .text(mOptions.current + 1 + '/' + total);
+                    clearPreviousMathInWrapper($wrapper.get(0));
+                    setTimeout(function () {
+                        // Only invoke MathJax when the freshly shown slide still
+                        // holds unrendered LaTeX: pre-rendered exports ship no
+                        // MathJax engine, so an unconditional call would 404.
+                        // hasLatex ignores already-rendered math (see common.js).
+                        const math =
+                            $exeDevices?.iDevice?.gamification?.math;
+                        if (
+                            math?.updateLatex &&
+                            math.hasLatex($wrapper.html() || '')
+                        )
+                            math.updateLatex('.FRMP-SlideshowWrapper');
+                    }, 1000);
+                }
+
+                $slideshow
+                    .find('#frmNext-' + instance)
+                    .on('click', function (e) {
+                        e.preventDefault();
+                        goTo(mOptions.current + 1, 'next');
+                    });
+                $slideshow
+                    .find('#frmPrev-' + instance)
+                    .on('click', function (e) {
+                        e.preventDefault();
+                        goTo(mOptions.current - 1, 'prev');
+                    });
+            } else if (total === 1) {
+                clearPreviousMathInWrapper($wrapper.get(0));
+                setTimeout(function () {
+                    // See goTo(): skip MathJax when no raw LaTeX remains so
+                    // pre-rendered exports never request the absent engine.
+                    const math = $exeDevices?.iDevice?.gamification?.math;
+                    if (
+                        math?.updateLatex &&
+                        math.hasLatex($wrapper.html() || '')
+                    )
+                        math.updateLatex('.FRMP-SlideshowWrapper');
+                }, 1000);
+            }
+        }
+    },
+
+    initScormData: function (ldata) {
+        $form.mScorm = window.scorm;
+        const session = $exeDevices.iDevice.gamification.scorm.bindSession(
+            $form.mScorm
+        );
+        $form.userName = session.userName;
+        $form.previousScore = session.previousScore;
+        $form.initialScore = $form.previousScore;
+        $exeDevices.iDevice.gamification.scorm.registerActivity(ldata);
+    },
+
+    init: function (data, accesibility) {},
+
+    updateTime: function (time, ideviceid) {
+        $('#frmPTime-' + ideviceid).text(this.formatTime(time));
+    },
+
+    formatTime: function (timeInSeconds) {
+        const totalMinutes = Math.floor(timeInSeconds / 60);
+        const leftoverSeconds = timeInSeconds % 60;
+        if (totalMinutes < 60) {
+            const mm = String(totalMinutes).padStart(2, '0');
+            const ss = String(leftoverSeconds).padStart(2, '0');
+            return `${mm}:${ss}`;
+        }
+
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        const hh = String(hours).padStart(2, '0');
+        const mm = String(minutes).padStart(2, '0');
+        const ss = String(leftoverSeconds).padStart(2, '0');
+        return `${hh}:${mm}:${ss}`;
+    },
+
+    startGame: function (data, reportScorm = false) {
+        if (data.gameStarted) return;
+        const checkButton = document.querySelector(
+            `#form-button-check-${data.id}`
+        );
+        const rebootButton = document.querySelector(
+            `#form-button-reset-${data.id}`
+        );
+        const showAnswers = document.querySelector(
+            `#form-button-show-answers-${data.id}`
+        );
+        const body = document.querySelector(`#frmBody-${data.id}`);
+        const startGameDiv = document.querySelector(
+            `#frmStartGameDiv-${data.id}`
+        );
+        if (startGameDiv) startGameDiv.style.display = 'none';
+        if (rebootButton) rebootButton.style.display = 'none';
+        if (showAnswers) showAnswers.style.display = 'none';
+        if (checkButton) checkButton.style.display = 'block';
+        if (body) body.style.display = 'block';
+        $form.resetScore(data);
+        data.gameOver = false;
+        data.counter = data.time * 60;
+        data.clock = setInterval(() => {
+            if (data.gameStarted) {
+                let $node = $('#frmMainContainer-' + data.id);
+                let $content = $('#node-content');
+                if (
+                    !$node.length ||
+                    ($content.length && $content.attr('mode') === 'edition')
+                ) {
+                    clearInterval(data.clock);
+                    return;
+                }
+
+                data.counter--;
+                $form.updateTime(data.counter, data.id);
+                // Nothing else here: an undeclared `gameStarted = false` used
+                // to sit on this line, writing a stray global once a second
+                // that nothing reads. Qualifying it as `data.gameStarted`
+                // would not be the fix either — it would fail the gate above
+                // on the next tick, freezing the countdown one second in and
+                // never reaching gameOver.
+                if (data.counter <= 0) {
+                    $form.gameOver(data);
+                }
+            }
+        }, 1000);
+        // Only typeset when the timed game body still contains raw LaTeX:
+        // pre-rendered exports bundle no MathJax engine (see common.js hasLatex).
+        const mainSelector = '#frmMainContainer-' + data.id;
+        if (
+            $exeDevices.iDevice.gamification.math.hasLatex(
+                $(mainSelector).html() || ''
+            )
+        ) {
+            $exeDevices.iDevice.gamification.math.updateLatex(mainSelector);
+        }
+        setTimeout(function () {
+            $form.resizeSlideShow(data);
+        }, 100);
+        data.gameStarted = true;
+        if (reportScorm) {
+            $form.saveScormScore(data);
+        }
+    },
+
+    gameOver: function (data) {
+        const checkButton = $(`#form-button-check-${data.id}`);
+        const rebootButton = $(`#form-button-reset-${data.id}`);
+        const showAnswers = $(`#form-button-show-answers-${data.id}`);
+        const cover = $(`#frmCover-${data.id}`);
+        if (cover.length) cover.show();
+        if (checkButton.length) checkButton.hide();
+        if (rebootButton.length) rebootButton.show();
+        if (data.addBtnAnswers & showAnswers.length) showAnswers.show();
+        data.gameOver = true;
+        $form.checkAllQuestions(data);
+        // The mark used to be a hardcoded 50 here, while the author's own
+        // dropdown was never read: $form.passRate stayed '' for the life of the
+        // page. Both are gone -- the threshold is the project's, or this
+        // activity's own when its author customised it.
+        $form.showScore($exe.passScore.toPercent($exe.passScore.resolve(data)), data);
+        if ($('body').hasClass('exe-scorm') && data.isScorm > 0) {
+            $form.sendScore(data);
+        }
+
+        $form.saveEvaluation(data);
+        if (data.time > 0) {
+            $form.stopCounter(data);
+            if (checkButton.length) checkButton.hide();
+            data.gameStarted = false;
+            data.gameOver = true;
+        }
+    },
+    stopCounter: function (data) {
+        if (data.clock) {
+            clearInterval(data.clock);
+        }
+    },
+    rebootGame(data) {
+        this.resetScore(data);
+        const $checkButton = $(`#form-button-check-${data.id}`);
+        const $resetButton = $(`#form-button-reset-${data.id}`);
+        const $showAnswers = $(`#form-button-show-answers-${data.id}`);
+        const $cover = $(`#frmCover-${data.id}`);
+        const $formPreview = $(`#form-questions-${data.id}`);
+        const toggle = ($el, show) => {
+            if ($el.length) show ? $el.show() : $el.hide();
+        };
+        if ($cover.length) $cover.hide();
+        toggle($checkButton, true);
+        toggle($resetButton, false);
+        toggle($showAnswers, false);
+        $formPreview.find('input.fillInput').css('border-color', '').val('');
+        $formPreview
+            .find(
+                '[id^=TrueFalseQuestion] input, [id^=SelectionQuestion] input'
+            )
+            .prop('checked', false)
+            .parent()
+            .css('color', '');
+        $formPreview.find('select').css('border-color', '').val('');
+        // Remove feedback messages
+        $formPreview.find('.form-feedback-message').remove();
+        // Hide all suggestions
+        $formPreview.find('.FRMP-Suggestion').hide();
+        // Reset suggestion icons to show state
+        $formPreview.find('.FRMP-SuggestionIcon').each(function () {
+            const $icon = $(this);
+            const src = $icon.attr('src');
+            if (src && src.includes('hidesuggestion')) {
+                $icon.attr(
+                    'src',
+                    src.replace('hidesuggestion', 'showsuggestion')
+                );
+                $icon.attr('alt', data.msgs.msgSuggestion);
+            }
+        });
+        $form.hideScore(data.id);
+        data.gameStarted = false;
+        data.gameOver = false;
+        if (data.time > 0) {
+            toggle($resetButton, false);
+            toggle($showAnswers, false);
+            // Leaves gameStarted true, which is why the flag is cleared first:
+            // startGame returns early on a game it believes is already running.
+            $form.startGame(data);
+        } else {
+            // An untimed form never goes through startGame, so nothing else
+            // marks the reopened attempt as in progress.
+            data.gameStarted = true;
+        }
+        $form.saveScormScore(data);
+    },
+    saveEvaluation: function (data) {
+        data.scorerp = $form.getScore(data);
+        $exeDevices.iDevice.gamification.report.saveEvaluation(
+            data,
+            data.isInExe
+        );
+    },
+
+    /**
+     * Publish the freshly reset state to the LMS when the form restarts.
+     *
+     * rebootGame() clears the answers and the counts, but nothing told the
+     * LMS, so the menu kept the finished attempt's grade and its terminal
+     * status until the learner pressed Comprobar again. The zero it publishes
+     * carries `gameOver` false, so it reopens the attempt rather than failing
+     * it.
+     *
+     * Mirrors the condition gameOver() already reports under, so both ways out
+     * of an attempt agree on when this iDevice talks to the LMS.
+     *
+     * In manual mode this reaches the LMS no more than any other report the
+     * activity makes by itself: sendScoreNew drops it, and the grade the
+     * learner last saved stands until they press the button again. That is the
+     * point of the mode, and it is the one observable difference between the
+     * two on restart.
+     */
+    saveScormScore: function (data) {
+        // `> 0` is the "SCORM tracking is on" test, not the mode test. Which
+        // mode it is gets decided once, in sendScoreNew: an automatic report
+        // from a manual-mode activity is dropped there, so the button stays the
+        // only thing that writes the grade.
+        if (!data || !(data.isScorm > 0)) return;
+        if (!$('body').hasClass('exe-scorm')) return;
+        $form.sendScore(data);
+    },
+
+    /**
+     * Wire the save button the learner owns in manual mode.
+     *
+     * The shared addButtonScoreNew emits it for isScorm 2 alone, so there is
+     * nothing to bind in the other modes and binding unconditionally costs
+     * nothing. Delegated from the iDevice node and bound by class, the way
+     * every other iDevice with this button does it.
+     *
+     * @param {Object} data The activity's options.
+     */
+    setBehaviourButtonSendScore: function (data) {
+        $('#frmMainContainer-' + data.id)
+            .closest('.idevice_node')
+            .off('click', '.Games-SendScore')
+            .on('click', '.Games-SendScore', function (e) {
+                e.preventDefault();
+                $form.sendScore(data, false);
+            });
+    },
+
+    /**
+     * Report the current score.
+     *
+     * @param {Object} data The activity's options.
+     * @param {boolean} [auto] false when the learner asked for it by pressing
+     * the save button. It never decides completion — only `data.gameOver`
+     * does — but it is what tells the runtime to confirm the save to the
+     * learner, and what lets a manual-mode activity report at all.
+     */
+    sendScore: function (data, auto = true) {
+        data.scorerp = $form.getScore(data);
+        data.previousScore = $form.previousScore;
+        data.userName = $form.userName;
+        $exeDevices.iDevice.gamification.scorm.sendScoreNew(auto, data);
+        $form.previousScore = data.previousScore;
+    },
+
+    generatePage(questionsData, data) {
+        let form = `<ul id="formPreview-${data.id}" class="FRMP-PREVIEW">`;
+        questionsData.forEach((question, index) => {
+            switch (question.activityType) {
+                case 'dropdown':
+                    form += this.createDropdownQuestion(question, data, index);
+                    break;
+                case 'selection':
+                    form += this.createSelectionQuestion(question, data, index);
+                    break;
+                case 'true-false':
+                    form += this.createTrueFalseQuestion(question, data, index);
+                    break;
+                case 'fill':
+                    form += this.createFillQuestion(question, data, index);
+                    break;
+                default:
+                    break;
+            }
+        });
+        form += '</ul>';
+        return form;
+    },
+
+    getHtmlFormView: function (questionsData, data) {
+        const html = data.showSlider
+            ? $form.generateFormSlideshow(questionsData, data)
+            : $form.generatePage(questionsData, data);
+        return html;
+    },
+
+    generateFormSlideshow: function (questionsData, data) {
+        const itemsPerSlide = data.showSlider ? 1 : 0;
+        if (typeof itemsPerSlide !== 'number' || itemsPerSlide < 1) {
+            return this.generatePage(questionsData, data);
+        }
+
+        const grouped = [];
+        for (let i = 0; i < questionsData.length; i += itemsPerSlide) {
+            grouped.push({
+                questions: questionsData.slice(i, i + itemsPerSlide),
+                startIndex: i,
+            });
+        }
+
+        const slidesHtml = grouped
+            .map((group, slideIdx) => {
+                let questionsHtml = `<ul class="FRMP-PREVIEW">`;
+                group.questions.forEach((question, relativeIndex) => {
+                    const absoluteIndex = group.startIndex + relativeIndex;
+                    switch (question.activityType) {
+                        case 'dropdown':
+                            questionsHtml += this.createDropdownQuestion(
+                                question,
+                                data,
+                                absoluteIndex
+                            );
+                            break;
+                        case 'selection':
+                            questionsHtml += this.createSelectionQuestion(
+                                question,
+                                data,
+                                absoluteIndex
+                            );
+                            break;
+                        case 'true-false':
+                            questionsHtml += this.createTrueFalseQuestion(
+                                question,
+                                data,
+                                absoluteIndex
+                            );
+                            break;
+                        case 'fill':
+                            questionsHtml += this.createFillQuestion(
+                                question,
+                                data,
+                                absoluteIndex
+                            );
+                            break;
+                        default:
+                            break;
+                    }
+                });
+                questionsHtml += `</ul>`;
+                return `
+              <div class="FRMP-SlideshowSlide" data-slide="${slideIdx}">
+                ${questionsHtml}
+              </div>`;
+            })
+            .join('');
+        const totalSlides = grouped.length;
+        return `
+            <div class="FRMP-SlideshowContainer" id="frmSlideShow-${data.id}">
+                <div class="FRMP-SlideshowControls">
+                    <a href="#" class="FRMP-SlideshowPrev FRMP-SlideshowControl" id="frmPrev-${data.id}" title="${data.msgs.msgPrevious}">
+                        <img src="${data.idevicePath}formprevious.png" alt="${data.msgs.msgPrevious}" />
+                    </a>
+                    <span class="FRMP-SlideNumber" id="frmSlideNumber-${data.id}">1/${totalSlides}</span>
+                    <a href="#" class="FRMP-SlideshowNext FRMP-SlideshowControl" id="frmNext-${data.id}" title="${data.msgs.msgNext}">
+                        <img src="${data.idevicePath}formnext.png" alt="${data.msgs.msgNext}" />
+                    </a>
+                </div>
+                <div class="FRMP-SlideshowWrapper">
+                    ${slidesHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    resizeSlideShow: function (data) {
+        const mOptions = data;
+        const instance = data.id;
+        if (mOptions.showSlider) {
+            const $slideshow = $('#frmSlideShow-' + instance);
+            const $wrapper = $slideshow.find('.FRMP-SlideshowWrapper');
+            const controlsHeight =
+                $slideshow.find('.FRMP-SlideshowControls').outerHeight(true) +
+                30;
+            const maxHeight = $slideshow
+                .find('.FRMP-SlideshowSlide')
+                .eq(mOptions.current)
+                .outerHeight();
+            $wrapper.css('height', maxHeight);
+            $slideshow.css('height', maxHeight + controlsHeight);
+        }
+    },
+    getSuggestionHtml(suggestion, data) {
+        if (!suggestion || !suggestion.trim()) {
+            return '';
+        }
+
+        const suggestionHtml = $form.replaceResourceDirectoryPaths(
+            data,
+            suggestion
+        );
+        return `
+            <a href="#" class="FRMP-ShowSuggestion">
+                <img src="${data.idevicePath}frmshowsuggestion.png" alt="${data.msgs.msgSuggestion}" class="FRMP-SuggestionIcon">
+                <span>${data.msgs.msgSuggestion}</span>
+            </a>
+            <div class="FRMP-Suggestion FRMP-EHidden">${suggestionHtml}</div>
+        `;
+    },
+
+    /**
+     * Transform json data in html dropdown question
+     *
+     * @param {Object} question
+     *
+     * @returns {String}
+     */
+    createDropdownQuestion(question, data, questionIndex) {
+        let newId = this.generateRandomId();
+        let htmlQuestion = '';
+        htmlQuestion += `<li class="FormView_dropdown FormView_question" data-id="${newId}" data-question-index="${questionIndex}" activity-type="dropdown" draggable="true">
+        <div id="questionTopBar_${newId}">
+          <label class="activity-title">Activity dropdown</label>
+          <div class="inline QuestionLabel_ButtonsContainer">
+            <button class="QuestionLabel_moveUp QuestionLabel_actionButton">arrow_upward</button>
+            <button class="QuestionLabel_moveDown QuestionLabel_actionButton">arrow_downward</button>
+            <button class="QuestionLabel_edit QuestionLabel_actionButton">edit</button>
+            <button class="QuestionLabel_remove QuestionLabel_actionButton">close</button>
+          </div>
+        </div>
+        <div id="QuestionElement_${newId}" class="FormViewContainer_dropdown FormViewContainer">`;
+        htmlQuestion += this.getProcessTextDropdownQuestion(
+            question.baseText,
+            question.wrongAnswersValue,
+            data
+        );
+        htmlQuestion += this.getSuggestionHtml(question.suggestion, data);
+        htmlQuestion += ` </div> <hr class="form-question-separator" /> </li> `;
+        return htmlQuestion;
+    },
+
+    /**
+     * Transform json data in html fill question
+     *
+     * @param {Object} question
+     *
+     * @returns {String}
+     */
+    createFillQuestion(question, data, questionIndex) {
+        let newId = this.generateRandomId();
+        let htmlQuestion = '';
+        htmlQuestion += `<li class="FormView_fill FormView_question" data-id="${newId}" data-question-index="${questionIndex}" activity-type="fill" draggable="true">
+            <div id="questionTopBar_${newId}">
+                <label class="activity-title">Activity fill</label>
+                <div class="inline QuestionLabel_ButtonsContainer">
+                <button class="QuestionLabel_moveUp QuestionLabel_actionButton">arrow_upward</button>
+                <button class="QuestionLabel_moveDown QuestionLabel_actionButton">arrow_downward</button>
+                <button class="QuestionLabel_edit QuestionLabel_actionButton">edit</button>
+                <button class="QuestionLabel_remove QuestionLabel_actionButton">close</button>
+                </div>
+            </div>
+            <div id="QuestionElement_${newId}" class="FormViewContainer_fill FormViewContainer">`;
+        htmlQuestion += this.getProcessTextFillQuestion(
+            question.baseText,
+            question.capitalization,
+            question.strict,
+            data
+        );
+        htmlQuestion += this.getSuggestionHtml(question.suggestion, data);
+        htmlQuestion += `</div> <hr class="form-question-separator" /> </li>`;
+        return htmlQuestion;
+    },
+
+    /**
+     * Transform json data in html true false question
+     *
+     * @param {Object} question
+     *
+     * @returns {String}
+     */
+    createTrueFalseQuestion(question, data, questionIndex) {
+        const newId = this.generateRandomId();
+        let htmlQuestion = '';
+        htmlQuestion += `<li class="FormView_true-false FormView_question" data-id="${newId}" data-question-index="${questionIndex}" activity-type="true-false" draggable="true">
+        <div id="questionTopBar_${newId}">
+          <label class="activity-title">Activity true-false</label>
+          <div class="inline QuestionLabel_ButtonsContainer">
+            <button class="QuestionLabel_moveUp QuestionLabel_actionButton" disabled="true">arrow_upward</button>
+            <button class="QuestionLabel_moveDown QuestionLabel_actionButton">arrow_downward</button>
+            <button class="QuestionLabel_edit QuestionLabel_actionButton">edit</button>
+            <button class="QuestionLabel_remove QuestionLabel_actionButton">close</button>
+          </div>
+        </div>
+        <div id="QuestionElement_${newId}" class="FormViewContainer_true-false FormViewContainer"> `;
+        htmlQuestion += this.getProcessTextTrueFalseQuestion(
+            question.baseText,
+            question.answer,
+            data
+        );
+        htmlQuestion += this.getSuggestionHtml(question.suggestion, data);
+        htmlQuestion += `</div> <hr class="form-question-separator" /> </li>`;
+        return htmlQuestion;
+    },
+
+    /**
+     * Transform json data in html selection question
+     *
+     * @param {Object} question
+     *
+     * @returns {String}
+     */
+    createSelectionQuestion(question, data, questionIndex) {
+        const newId = this.generateRandomId();
+        let htmlQuestion = '';
+        let radioOrCheckbox = 'radio';
+        if (question.selectionType === 'multiple') {
+            radioOrCheckbox = 'checkbox';
+        }
+
+        htmlQuestion += `<li class="FormView_selection FormView_question" data-id="${newId}" data-question-index="${questionIndex}" activity-type="selection" selection-type="${question.selectionType}" draggable="true">
+                <div id="questionTopBar_${newId}">
+                <label class="activity-title">Activity ${question.selectionType} selection</label>
+                <div class="inline QuestionLabel_ButtonsContainer">
+                    <button class="QuestionLabel_moveUp QuestionLabel_actionButton">arrow_upward</button>
+                    <button class="QuestionLabel_moveDown QuestionLabel_actionButton">arrow_downward</button>
+                    <button class="QuestionLabel_edit QuestionLabel_actionButton">edit</button>
+                    <button class="QuestionLabel_remove QuestionLabel_actionButton">close</button>
+                </div>
+                </div>
+                <div id="QuestionElement_${newId}" class="FormViewContainer_selection FormViewContainer">`;
+        htmlQuestion += this.getProcessTextSelectionQuestion(
+            question.baseText,
+            radioOrCheckbox,
+            question.answers,
+            data
+        );
+        htmlQuestion += this.getSuggestionHtml(question.suggestion, data);
+        htmlQuestion += `</div> <hr class="form-question-separator" /> </li>`;
+        return htmlQuestion;
+    },
+
+    getProcessTextDropdownQuestion(baseText, otherWordsText, data) {
+        baseText = $form.replaceResourceDirectoryPaths(data, baseText);
+        let regexReplace = /(<u>)((?:(?!<u>|<\/u>)[\s\S])*?)(<\/u>)/;
+        let regexElement = /(?<=<u>)((?:(?!<u>|<\/u>)[\s\S])*?)(?=<\/u>)/;
+        let regexElementsAll = /(?<=<u>)((?:(?!<u>|<\/u>)[\s\S])*?)(?=<\/u>)/g;
+        let otherWords = otherWordsText ? otherWordsText.split('|') : [];
+        let allMatchs = [...baseText.matchAll(regexElementsAll)];
+        let allOptions = allMatchs.map((m) => m[0]).concat(otherWords);
+        let allOptionsShuffle = this.shuffle(allOptions);
+        let selectId = this.generateRandomId();
+        let htmlDropdown = `<div title="${data.msgs.msgDropdownHelp}">`;
+        htmlDropdown += baseText;
+        htmlDropdown += `</div>`;
+        while (htmlDropdown.search(regexReplace) >= 0) {
+            selectId = this.generateRandomId();
+            let answerString = htmlDropdown.match(regexElement);
+            let answer = answerString ? answerString[0] : '';
+            htmlDropdown = htmlDropdown.replace(
+                regexReplace,
+                this.getSelectDropdownQuestion(
+                    selectId,
+                    allOptionsShuffle,
+                    answer
+                )
+            );
+        }
+
+        selectId = this.generateRandomId();
+        if (!htmlDropdown.includes('dropdownWrongAnswer')) {
+            htmlDropdown += `<span id="dropdownWrongAnswer_${selectId}" class="dropdownWrongAnswer" style="display:none">${otherWordsText}</span>`;
+        } else {
+            let oldWrongAnswers = new RegExp(
+                '<span id="dropdownWrongAnswer[^>]*>[^<]+<\/span>'
+            );
+            let newWrongAnswers = `<span id="dropdownWrongAnswer_${selectId}" class="dropdownWrongAnswer" style="display:none">${otherWordsText}</span>`;
+            htmlDropdown = htmlDropdown.replace(
+                oldWrongAnswers,
+                newWrongAnswers
+            );
+        }
+
+        if (!htmlDropdown.includes('dropdownBaseText')) {
+            htmlDropdown += `<div id="dropdownBaseText_${selectId}" class="dropdownBaseText" style="display:none">${baseText}</div>`;
+        } else {
+            let oldBaseText = new RegExp(
+                '<div id="dropdownBaseText[^>]*>[^<]+<\/div>'
+            );
+            let newBaseText = `<div id="dropdownBaseText_${selectId}" class="dropdownBaseText" style="display:none">${baseText}</div>`;
+            htmlDropdown = htmlDropdown.replace(oldBaseText, newBaseText);
+        }
+
+        return htmlDropdown;
+    },
+
+    getSelectDropdownQuestion(id, options, answer) {
+        const optionsHtml = options
+            .map((option) => `<option value="${option}">${option}</option>`)
+            .join('');
+        return ` <select id="dropdownSelect_${id}" class="dropdownSelect" data-id="${id}" name="dropdownSelector">
+            <option value="" selected></option> ${optionsHtml}</select>
+            <span id="dropdownAnswer_${id}" class="dropdownAnswer" style="display:none">${answer}</span>
+        `;
+    },
+
+    /**
+     * Processes text for fill-in-the-blank questions
+     *
+     * @param {*} baseText
+     * @param {*} checkCapitalization
+     * @param {*} strictQualification
+     * @returns {String}
+     */
+    getProcessTextFillQuestion(
+        baseText,
+        checkCapitalization,
+        strictQualification,
+        data
+    ) {
+        baseText = $form.replaceResourceDirectoryPaths(data, baseText);
+        const regexReplace = /(<u>).*?(<\/u>)/;
+        const regexElement = /(?<=<u>).*?(?=<\/u>)/;
+        let htmlFill = `<div title="${data.msgs.msgFillHelp}">${baseText}</div>`;
+        while (htmlFill.search(regexReplace) >= 0) {
+            const answerString =
+                htmlFill.match(regexElement)?.[0]?.trim() || '';
+            const inputId = this.generateRandomId();
+            htmlFill = htmlFill.replace(
+                regexReplace,
+                `<input id="fillInput_${inputId}" type="text" data-id="${inputId}" class="fillInput" />
+          <span id="fillAnswer_${inputId}" class="fillAnswer" style="display:none;">${answerString}</span>`
+            );
+        }
+
+        const fillIds = `<span id="fillCapitalization_${this.generateRandomId()}" style="display:none;">${checkCapitalization}</span>
+      <span id="fillStrictQualification_${this.generateRandomId()}" style="display:none;">${strictQualification}</span>`;
+        if (!htmlFill.includes('fillBaseText')) {
+            htmlFill += `<div id="fillBaseText_${this.generateRandomId()}" class="fillBaseText" style="display:none">${baseText}</div>`;
+        } else {
+            const newBaseText = ` <div id="fillBaseText_${this.generateRandomId()}" class="fillBaseText" style="display:none">${baseText}</div>`;
+            htmlFill = htmlFill.replace(
+                /<div id="fillBaseText[^>]*>[^<]+<\/div>/,
+                newBaseText
+            );
+        }
+
+        return htmlFill + fillIds;
+    },
+
+    /**
+     * Escape plain-text content for safe insertion as HTML text.
+     * Option/answer texts are plain text (e.g. "A<B"); without escaping, the
+     * "<" would be parsed as markup and the text after it lost.
+     */
+    escapeHtmlText(text) {
+        return String(text == null ? '' : text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    },
+
+    /** Escape plain text for safe insertion inside a double-quoted attribute. */
+    escapeHtmlAttr(text) {
+        return this.escapeHtmlText(text).replace(/"/g, '&quot;');
+    },
+
+    /**
+     * Escape plain-text content but keep pre-rendered math spans intact.
+     *
+     * Selection option text is authored as plain text and escaped to prevent
+     * HTML/script injection. During export, LaTeX in it is pre-rendered to
+     * <span class="exe-math-rendered">SVG</span>; this helper escapes everything
+     * EXCEPT those spans, so the math shows as SVG without bundling MathJax —
+     * while a stray "<" in plain text is still escaped (mirrors adaptative-quiz).
+     *
+     * Security: only spans matching our exact pre-renderer output AND carrying no
+     * script-bearing markup are kept raw. A forged span typed into a plain-text
+     * field (e.g. with an onerror handler) fails the strict pattern or the
+     * denylist and is escaped, preserving the XSS boundary.
+     *
+     * @param {String} str
+     * @returns {String}
+     */
+    escapeHtmlButKeepRenderedMath(str) {
+        const text = String(str ?? '');
+        const RENDERED_MATH =
+            /<span class="exe-math-rendered" data-latex="[^"]*"(?: data-display="block")?><svg\b[\s\S]*?<\/svg>(?:<math\b[\s\S]*?<\/math>)?<\/span>/g;
+        const UNSAFE = /<script|<foreignobject|<iframe|<animate|<set\b|javascript:|\son\w+\s*=/i;
+        let out = '';
+        let last = 0;
+        let match;
+        RENDERED_MATH.lastIndex = 0;
+        while ((match = RENDERED_MATH.exec(text)) !== null) {
+            out += this.escapeHtmlText(text.slice(last, match.index));
+            out += UNSAFE.test(match[0]) ? this.escapeHtmlText(match[0]) : match[0];
+            last = match.index + match[0].length;
+        }
+        out += this.escapeHtmlText(text.slice(last));
+        return out;
+    },
+
+    /**
+     * Processes text for selection questions
+     *
+     * @param {*} baseText
+     * @param {*} optionType
+     * @param {*} answer
+     * @returns {String}
+     */
+    getProcessTextSelectionQuestion(baseText, optionType, answer, data) {
+        baseText = $form.replaceResourceDirectoryPaths(data, baseText);
+        let id = this.generateRandomId();
+        let stringTitle;
+        optionType === 'radio'
+            ? (stringTitle = data.msgs.msgSingleSelectionHelp)
+            : (stringTitle = data.msgs.msgMultipleSelectionHelp);
+        let htmlSelection = `<div title="${stringTitle}">`;
+        htmlSelection += baseText.replace(/<p>\s*(<br\s*\/?>)?\s*<\/p>/gi, '');
+        htmlSelection += `</div>`;
+        let rightAnswer = [];
+        htmlSelection += `<div id="SelectionQuestion_${id}" data-id="${id}" class="selection-buttons-container">`;
+        answer.forEach((option, index) => {
+            htmlSelection += `<div class="inline button-response-form">`;
+            htmlSelection += `<input type="${optionType}" name="${id}_SelectionQuestion" id="${id}_option_${index + 1}" value="${this.escapeHtmlAttr(option[1])}">`;
+            htmlSelection += `<label for="${id}_option_${index + 1}">`;
+            htmlSelection += this.escapeHtmlButKeepRenderedMath(option[1]);
+            htmlSelection += `</label>`;
+            htmlSelection += `</div>`;
+            if (option[0]) {
+                rightAnswer.push(index);
+            }
+        });
+        htmlSelection += `<span id="SelectionAnswer_${id}" class="selectionAnswer" style="display:none;">${rightAnswer}</span>`;
+        htmlSelection += `</div>`;
+        return htmlSelection;
+    },
+
+    /**
+     * Processes text for true/false questions
+     *
+     * @param {*} baseText
+     * @param {*} answer
+     * @param {*} data
+     * @returns {String}
+     */
+    getProcessTextTrueFalseQuestion(baseText, answer, data) {
+        baseText = $form.replaceResourceDirectoryPaths(data, baseText);
+        let id = this.generateRandomId();
+        let htmlTrueFalse = `<div title="${data.msgs.msgTrueFalseHelp}">`;
+        htmlTrueFalse += baseText.replace(/<p>\s*(<br\s*\/?>)?\s*<\/p>/gi, '');
+        htmlTrueFalse += `</div>`;
+        htmlTrueFalse += `<div id="TrueFalseQuestion_${id}" data-id="${id}" class="true-false-radio-buttons-container inline" data-answer="${answer}" >`;
+        htmlTrueFalse += `<div class="inline">`;
+        htmlTrueFalse += `<input type="radio" name="${id}_TrueFalseQuestion" id="${id}_true" value="1">`;
+        htmlTrueFalse += `<label for="${id}_true">`;
+        htmlTrueFalse += data.msgs.msgTrue;
+        htmlTrueFalse += `</label>`;
+        htmlTrueFalse += `</div>`;
+        htmlTrueFalse += `<div class="inline">`;
+        htmlTrueFalse += `<input type="radio" name="${id}_TrueFalseQuestion" id="${id}_false" value="0">`;
+        htmlTrueFalse += `<label for="${id}_false">`;
+        htmlTrueFalse += data.msgs.msgFalse;
+        htmlTrueFalse += `</label>`;
+        htmlTrueFalse += `</div>`;
+        htmlTrueFalse += `<span id="TrueFalseAnswer_${id}" class="trueFalseAnswer" style="display:none;">${answer}</span>`;
+        htmlTrueFalse += `</div>`;
+        return htmlTrueFalse;
+    },
+
+    shuffle(a) {
+        let j, x, i;
+        for (i = a.length - 1; i > 0; i--) {
+            j = Math.floor(Math.random() * (i + 1));
+            x = a[i];
+            a[i] = a[j];
+            a[j] = x;
+        }
+
+        return a;
+    },
+
+    generateRandomId: function () {
+        const letters = Math.random()
+            .toString(36)
+            .substring(2, 7)
+            .toUpperCase();
+        return `${Date.now()}-${letters}`;
+    },
+
+    hideScore: function (ideviceId) {
+        const $resultTest = $('#form-result-test-' + ideviceId);
+        const $scoreText = $('#form-score-' + ideviceId);
+        const $resultsContainer = $('#resultsContainer-' + ideviceId);
+        if ($resultTest.length) {
+            $resultTest.hide();
+        }
+
+        if ($scoreText.length) {
+            $scoreText.hide();
+        }
+
+        if ($resultsContainer.length) {
+            $resultsContainer.hide();
+        }
+    },
+    /**
+     * @param {number|null} passRate Pass mark as a percentage, or null to show
+     * the score without a verdict. A mark of 0 is a verdict -- everyone passes
+     * -- so it must not be mistaken for "no mark", which a truthiness check did.
+     * @param {Object} data The activity options.
+     */
+    showScore: function (passRate, data) {
+        const $resultTest = $('#form-result-test-' + data.id);
+        const $scoreTest = $('#form-score-' + data.id);
+        const $resultsContainer = $('#resultsContainer-' + data.id);
+        if (passRate !== null && passRate !== undefined && passRate !== '') {
+            $resultTest.show();
+            $scoreTest.show();
+            $scoreTest
+                .removeClass('number-score-alone')
+                .addClass('number-score');
+            const isPass =
+                (data.rightQuestions / data.totalQuestions) * 100 >=
+                parseInt(passRate, 10);
+            $resultTest
+                .text(
+                    isPass
+                        ? data.msgs.msgTestResultPass
+                        : data.msgs.msgTestResultNotPass
+                )
+                .toggleClass('pass-test', isPass)
+                .toggleClass('fail-test', !isPass);
+            $scoreTest
+                .toggleClass('pass-test', isPass)
+                .toggleClass('fail-test', !isPass);
+        } else {
+            $scoreTest.show();
+            $scoreTest
+                .removeClass('number-score')
+                .addClass('number-score-alone');
+        }
+
+        const score = $form.getScore(data);
+        let finalScore = score % 1 === 0 ? score : score.toFixed(2);
+        const scoreText = `${data.msgs.msgYouScore} ${finalScore} (${data.rightQuestions}/${data.totalQuestions})`;
+        $scoreTest.text(scoreText);
+        $resultsContainer.show();
+    },
+
+    resetScore: function (data) {
+        data.totalQuestions = 0;
+        data.rightQuestions = 0;
+        data.wrongQuestions = 0;
+    },
+
+    /**
+     * The mark for this activity, on the 0..10 scale the runtime expects.
+     *
+     * `totalQuestions` is counted while the answers are checked, and
+     * resetScore() zeroes it — so between starting a timed activity and the
+     * first Comprobar there is nothing to divide by, and the division gave NaN.
+     * The only reason it never reached the LMS is sendScoreNew's own
+     * Number.isFinite guard, several files away. Nothing answered yet is a
+     * zero.
+     *
+     * @param {Object} data The activity's options.
+     * @returns {number} the mark, 0 when there is nothing to score
+     */
+    getScore: function (data) {
+        const total = parseFloat(data && data.totalQuestions);
+        if (!Number.isFinite(total) || total <= 0) return 0;
+        const right = parseFloat(data.rightQuestions);
+        if (!Number.isFinite(right)) return 0;
+        return (right * 10) / total;
+    },
+
+    setBehaviourTest: function (data) {
+        const $startGame = $('#frmStartGame-' + data.id);
+        if (!$startGame.length) return;
+        $startGame.on('click', function () {
+            $form.startGame(data, true);
+        });
+    },
+
+    setBehaviourOptions: function (data) {
+        const $formPreview = $('#formPreview-' + data.id);
+        if (!$formPreview.length) return;
+        $formPreview.find('input').on('click', function () {
+            const $input = $(this);
+            if ($input.hasClass('fillInput')) {
+                $input.css('backgroundColor', '');
+            } else if ($input.attr('name').includes('TrueFalseQuestion')) {
+                $input
+                    .closest('[id^=TrueFalseQuestion]')
+                    .find('input')
+                    .each(function () {
+                        $(this).parent().css('backgroundColor', '');
+                    });
+            } else if ($input.attr('name').includes('SelectionQuestion')) {
+                $input
+                    .closest('[id^=SelectionQuestion]')
+                    .find('input')
+                    .each(function () {
+                        $(this).parent().css('backgroundColor', '');
+                    });
+            }
+
+            $form.hideScore(data.id);
+        });
+        $formPreview.find('select').on('click', function () {
+            $(this).css('backgroundColor', '');
+            $form.hideScore(data.id);
+        });
+    },
+
+    setBehaviourButtonResetQuestions: function (data) {
+        const $resetButton = $('#form-button-reset-' + data.id);
+        if (!$resetButton.length) return;
+        $resetButton.on('click', function () {
+            $resetButton.hide();
+            $form.rebootGame(data);
+            return;
+        });
+    },
+
+    setBehaviourButtonShowAnswers(data) {
+        const $btn = $(`#form-button-show-answers-${data.id}`);
+        if (!$btn.length) return;
+        const $formPreview = $(`#form-questions-${data.id}`);
+        const showFillInput = ($input) => {
+            $input.css('border-color', '').val($input.next().text());
+        };
+        const showTrueFalse = ($container) => {
+            const answer = parseInt($container.data('answer'), 10);
+            $container.find('input').each(function () {
+                const $opt = $(this);
+                const val = parseInt($opt.val(), 10);
+                $opt.prop('checked', val === answer)
+                    .parent()
+                    .css('color', '');
+            });
+        };
+        const showSelection = ($container) => {
+            const answers = $container
+                .find('[id^=SelectionAnswer]')
+                .text()
+                .split(',');
+            $container.find('input').each(function (i) {
+                const $opt = $(this);
+                const checked = answers.includes(i.toString());
+                $opt.prop('checked', checked).parent().css('color', '');
+            });
+        };
+        $btn.on('click', () => {
+            $formPreview.find('input').each(function () {
+                const $inp = $(this);
+                if ($inp.hasClass('fillInput')) {
+                    showFillInput($inp);
+                } else if ($inp.attr('name').includes('TrueFalseQuestion')) {
+                    showTrueFalse($inp.closest('[id^=TrueFalseQuestion_]'));
+                } else if ($inp.attr('name').includes('SelectionQuestion')) {
+                    showSelection($inp.closest('[id^=SelectionQuestion]'));
+                }
+            });
+            $formPreview.find('select.dropdownSelect').each(function () {
+                const $sel = $(this);
+                const selectId = $sel.data('id');
+                const correctAnswer = $(
+                    `#dropdownAnswer_${selectId}`,
+                    $formPreview
+                ).text();
+                $sel.css('backgroundColor', '').val(correctAnswer);
+            });
+            // Ocultar puntuación si es necesario
+            // this.hideScore(data.id);
+        });
+    },
+
+    setBehaviourButtonCheckQuestions: function (data) {
+        const $checkButton = $('#form-button-check-' + data.id);
+        if (!$checkButton.length) return;
+        $checkButton.on('click', function () {
+            $form.gameOver(data);
+        });
+    },
+
+    /*
+     * @param {*} ideviceId
+     */
+    checkAllQuestions: function (data) {
+        this.resetScore(data);
+        $('#frmMainContainer-' + data.id)
+            .find('.FormView_question')
+            .each((_, question) => {
+                $form.checkQuestion($(question), data);
+            });
+    },
+
+    checkQuestion: function ($question, data) {
+        const typeQuestion = $question.attr('activity-type');
+        const questionIndex = parseInt(
+            $question.attr('data-question-index'),
+            10
+        );
+        const questionData =
+            data.questionsData && data.questionsData[questionIndex];
+        const checkFunctions = {
+            dropdown: () =>
+                $form.checkQuestionDropdown($question, data, questionData),
+            selection: () =>
+                $form.checkQuestionSelection($question, data, questionData),
+            'true-false': () =>
+                $form.checkQuestionTrueFalse($question, data, questionData),
+            fill: () => $form.checkQuestionFill($question, data, questionData),
+        };
+        if (checkFunctions[typeQuestion]) {
+            checkFunctions[typeQuestion]();
+        }
+    },
+    /**
+     *
+     * @param {*} question
+     */
+    checkQuestionDropdown: function ($question, data, questionData) {
+        data.totalQuestions++;
+        let correctWords = 0;
+        $question.find('.dropdownSelect').each((_, select) => {
+            const $select = $(select);
+            const questionId = $select.data('id');
+            const answerValue = $(`#dropdownAnswer_${questionId}`, $question)
+                .text()
+                .trim();
+            const selectedValue = $select.val() ? $select.val().trim() : '';
+            if (selectedValue && selectedValue === answerValue) {
+                correctWords++;
+            }
+        });
+        const isCorrect =
+            correctWords === $question.find('.dropdownSelect').length;
+        if (isCorrect) {
+            data.rightQuestions++;
+        } else {
+            data.wrongQuestions++;
+        }
+
+        // Show feedback
+        if (questionData) {
+            $form.showFeedback($question, isCorrect, questionData, data);
+        }
+    },
+    /**
+     *
+     * @param {*} question
+     */
+    checkQuestionSelection: function ($question, data, questionData) {
+        data.totalQuestions++;
+        const questionId = $question
+            .find('[id^=SelectionQuestion_]')
+            .data('id');
+        const answersValues = [];
+        let somethingChecked = false;
+        $question
+            .find(`input[name="${questionId}_SelectionQuestion"]`)
+            .each((_, answer) => {
+                const $answer = $(answer);
+                if ($answer.is(':checked')) {
+                    answersValues.push(true);
+                    somethingChecked = true;
+                } else {
+                    answersValues.push(false);
+                }
+            });
+        const answerElement = $(`#SelectionAnswer_${questionId}`, $question)
+            .text()
+            .split(',');
+        const results = answersValues.map((value, index) =>
+            answerElement.includes(index.toString()) ? value : !value
+        );
+        const isCorrect = results.every((result) => result);
+        if (isCorrect) {
+            data.rightQuestions++;
+        } else {
+            data.wrongQuestions++;
+        }
+
+        // Show feedback
+        if (questionData) {
+            $form.showFeedback($question, isCorrect, questionData, data);
+        }
+    },
+    /**
+     *
+     * @param {*} question
+     */
+    checkQuestionTrueFalse: function ($question, data, questionData) {
+        data.totalQuestions++;
+        const questionId = $question
+            .find('[id^=TrueFalseQuestion_]')
+            .data('id');
+        const $answers = $question.find(
+            `input[name="${questionId}_TrueFalseQuestion"]`
+        );
+        const $answerChecked = $question.find(
+            `input[name="${questionId}_TrueFalseQuestion"]:checked`
+        );
+        const answerValueRaw = $question
+            .find('[id^=TrueFalseQuestion_]')
+            .data('answer');
+        let isCorrect = false;
+        if ($answerChecked.length) {
+            const selectedBool = Boolean(parseInt($answerChecked.val(), 10));
+            const correctBool = Boolean(Number(answerValueRaw));
+            if (selectedBool === correctBool) {
+                data.rightQuestions++;
+                isCorrect = true;
+            } else {
+                data.wrongQuestions++;
+            }
+        } else {
+            data.wrongQuestions++;
+        }
+
+        if (questionData) {
+            $form.showFeedback($question, isCorrect, questionData, data);
+        }
+    },
+    checkQuestionFill: function ($question, data, questionData) {
+        data.totalQuestions++;
+        const checkCapitalization =
+            $question.find('[id^="fillCapitalization"]').text() === 'true';
+        const strictQualification =
+            $question.find('[id^="fillStrictQualification"]').text() === 'true';
+        let correctWords = 0;
+        function levenshtein(a, b) {
+            const m = a.length;
+            const n = b.length;
+            const dp = Array.from({ length: m + 1 }, () => new Array(n + 1));
+            for (let i = 0; i <= m; i++) {
+                dp[i][0] = i;
+            }
+
+            for (let j = 0; j <= n; j++) {
+                dp[0][j] = j;
+            }
+
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    dp[i][j] = Math.min(
+                        dp[i - 1][j] + 1,
+                        dp[i][j - 1] + 1,
+                        dp[i - 1][j - 1] + cost
+                    );
+                }
+            }
+            return dp[m][n];
+        }
+
+        $question.find('.fillInput').each((_, input) => {
+            const $input = $(input);
+            const questionId = $input.data('id');
+            const answerValues = $(`#fillAnswer_${questionId}`, $question)
+                .text()
+                .split('|');
+            const userValueRaw = $input.val().trim();
+            let isCorrect = false;
+            for (let answerRaw of answerValues) {
+                let answer = answerRaw;
+                let userValue = userValueRaw;
+                if (!checkCapitalization) {
+                    answer = answer.toLowerCase();
+                    userValue = userValue.toLowerCase();
+                }
+
+                if (strictQualification) {
+                    if (answer === userValue) {
+                        isCorrect = true;
+                        break;
+                    }
+                } else {
+                    if (levenshtein(answer, userValue) <= 1) {
+                        isCorrect = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isCorrect) {
+                correctWords++;
+            }
+        });
+        const isAllCorrect =
+            correctWords === $question.find('.fillInput').length;
+        if (isAllCorrect) {
+            data.rightQuestions++;
+        } else {
+            data.wrongQuestions++;
+        }
+
+        if (questionData) {
+            $form.showFeedback($question, isAllCorrect, questionData, data);
+        }
+    },
+    compare2Words: function (word1, word2) {
+        if (word1.length !== word2.length) return false;
+        const differences = [...word1].filter(
+            (letter, index) => letter !== word2[index]
+        ).length;
+        return differences <= 1;
+    },
+
+    showFeedback: function ($question, isCorrect, questionData, data) {
+        $question.find('.form-feedback-message').remove();
+        let feedbackText = isCorrect
+            ? questionData.feedbackRight
+            : questionData.feedbackWrong;
+        if (!feedbackText || feedbackText.trim() === '') {
+            feedbackText = isCorrect ? data.msgs.msgOk : data.msgs.msgKO;
+        }
+
+        // Create the feedback div with appropriate styling
+        const feedbackClass = isCorrect
+            ? 'form-feedback-correct'
+            : 'form-feedback-wrong';
+        const feedbackHtml = `
+            <div class="form-feedback-message ${feedbackClass}">
+                ${feedbackText}
+            </div>
+        `;
+        $question.find('.FormViewContainer').after(feedbackHtml);
+
+        if (data.showSlider) {
+            setTimeout(function () {
+                $form.resizeSlideShow(data);
+            }, 50);
+        }
+    },
+
+    loadSCORM_API_wrapper: function (data) {
+        const ldata = $form.resolveInstance(data);
+        if (!ldata) return;
+        if (typeof pipwerks === 'undefined') {
+            eXe.app.loadScript(
+                this.scormAPIwrapper,
+                '$form.loadSCOFunctions("' +
+                    $form.escapeIdForCallback(ldata.id) +
+                    '")'
+            );
+        } else {
+            this.loadSCOFunctions(ldata);
+        }
+    },
+    escapeForCallback: function (obj) {
+        let json = JSON.stringify(obj);
+        json = json.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return json;
+    },
+
+    /**
+     * Escape an iDevice id for embedding in a loadScript callback string.
+     *
+     * @param {string} id The instance id.
+     * @returns {string} The id, safe to sit inside double quotes.
+     */
+    escapeIdForCallback: function (id) {
+        return String(id).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    },
+
+    /**
+     * Resolve the live instance data for a bootstrap step.
+     *
+     * The SCORM bootstrap can only reach a script it has just loaded through
+     * an `eXe.app.loadScript` callback, which is a string. The whole ldata
+     * used to travel through it as JSON and be parsed back, which produced a
+     * COPY: registerActivity resolves the iDevice identity (ideviceId,
+     * ideviceNumber, title, mainElement) from the DOM and wrote it onto that
+     * copy, while the object the Comprobar button is bound to received none of
+     * it. reportActivity then refused every score with its `!game.ideviceId`
+     * guard — silently, with no console error — so the mark never reached the
+     * LMS. Only the id travels through the callback now, and the live object
+     * is looked up here.
+     *
+     * @param {Object|string} data Instance data, or the id of one.
+     * @returns {Object|null} The live instance data, or null when unknown.
+     */
+    resolveInstance: function (data) {
+        if (data && typeof data === 'object') return data;
+        if (typeof data !== 'string') return null;
+        if ($form.instances[data]) return $form.instances[data];
+        // A JSON payload from a package built before the id-only callback.
+        // Parsing it back is the very copy this replaced, but a copy still
+        // beats dropping the activity altogether.
+        try {
+            return JSON.parse(data);
+        } catch (e) {
+            return null;
+        }
+    },
+
+    loadSCOFunctions: function (data) {
+        const ldata = $form.resolveInstance(data);
+        if (!ldata) return;
+        if (typeof scorm === 'undefined') {
+            eXe.app.loadScript(
+                this.scormFunctions,
+                '$form.initSCORM("' +
+                    $form.escapeIdForCallback(ldata.id) +
+                    '")'
+            );
+        } else {
+            this.initSCORM(ldata);
+        }
+    },
+    initSCORM: function (data) {
+        const ldata = $form.resolveInstance(data);
+        if (!ldata) return;
+        $form.mScorm = typeof scorm !== 'undefined' ? scorm : window.scorm;
+        if (!$form.mScorm) return;
+        // bindSession, reached through initScormData, is what opens the session.
+        $form.initScormData(ldata);
+    },
+    endScorm: function () {
+        if ($form.mScorm && typeof $form.mScorm.quit == 'function') {
+        }
+    },
+};

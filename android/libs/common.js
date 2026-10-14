@@ -1,0 +1,3911 @@
+/*! ===========================================================================
+    eXe
+    Copyright 2004-2005, University of Auckland
+    Copyright 2004-2008 eXe Project, http://eXeLearning.org/
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA    02111-1307    USA
+    ===========================================================================
+
+    ClozelangElement's functions by José Ramón Jiménez Reyes
+    More than one right answer in the Cloze iDevice by José Miguel Andonegi
+    2015. Refactored and completed by Ignacio Gros (http://www.gros.es) for http://exelearning.net/
+*/
+
+// Glyph ranges vendored under exe_math/fonts/. Kept equal to VENDORED_FONT_RANGES in
+// scripts/vendor-mathjax.ts by mathjax-packages.spec.ts.
+//
+// MathJax 4 asks for a range the first time a character needs it. The ones we do not
+// ship must never be asked for: with paths.fonts pointing at our own tree the request
+// 404s, and MathJax remembers the failure -- the first character degrades to a serif
+// glyph, but the *second* one rejects the whole render call, so every formula in that
+// call is left on screen as raw \(...\), accented or not. See
+// $exe.math.silenceUnvendoredFontRanges below.
+window.MATHJAX_VENDORED_FONT_RANGES = [
+    'accents', 'arrows', 'calligraphic', 'double-struck', 'fraktur', 'math', 'monospace',
+    'sans-serif', 'script', 'shapes', 'symbols', 'symbols-b-i', 'variants'
+];
+
+window.MathJax = window.MathJax || (function() {
+    var isWorkarea = typeof window.eXeLearning !== 'undefined' || document.querySelector('script[src*="app/common/exe_math"]');
+    var isIndex = document.documentElement.id === 'exe-index';
+    // For workarea: use versioned path from eXeLearning config or detect from script tags
+    // For exports: use relative paths (./libs or ../libs)
+    var version = (window.eXeLearning && window.eXeLearning.version) || '';
+    var configBasePath = '';
+    if (isWorkarea) {
+        // Try to detect version and basePath from existing script tags (e.g., /web/exelearning/v0.0.0-alpha/app/...)
+        var scriptTag = document.querySelector('script[src*="/app/common/"]');
+        if (scriptTag) {
+            var src = scriptTag.src;
+            // Extract version (e.g., v0.0.0-alpha)
+            var versionMatch = src.match(/\/(v[\d.]+[^/]*)\//);
+            if (versionMatch) version = versionMatch[1];
+            // Extract basePath - everything before /v... or /app/
+            // URL might be: /web/exelearning/v0.0.0/app/common/... or /v0.0.0/app/common/...
+            try {
+                var url = new URL(src);
+                var pathname = url.pathname;
+                // Find where the versioned path or /app/ starts
+                var appIndex = pathname.indexOf('/app/common/');
+                if (appIndex > 0) {
+                    var beforeApp = pathname.substring(0, appIndex);
+                    // If there's a version, remove it from the path
+                    if (version && beforeApp.endsWith('/' + version)) {
+                        configBasePath = beforeApp.substring(0, beforeApp.length - version.length - 1);
+                    } else {
+                        configBasePath = beforeApp;
+                    }
+                }
+            } catch (e) {
+                // If URL parsing fails, leave configBasePath empty
+            }
+        }
+    }
+    // Generic logic to detect if we are in the index page (root) or a subpage
+    // We check the src of the common.js script itself.
+    var scriptPath = '';
+    var scripts = document.getElementsByTagName('script');
+    for (var i = 0; i < scripts.length; i++) {
+        var src = scripts[i].getAttribute('src');
+        if (src && src.indexOf("common.js") !== -1 && src.indexOf("common_i18n") === -1) {
+            scriptPath = src;
+            break;
+        }
+    }
+    // If common.js is loaded as "libs/common.js" (or "./libs...") we are at root.
+    // If it's loaded as "../libs/common.js", we are in a subfolder.
+    if (scriptPath && (scriptPath === 'libs/common.js' || scriptPath === './libs/common.js' || scriptPath.indexOf('/libs/common.js') !== -1 && scriptPath.indexOf('../') === -1)) {
+        isIndex = true;
+    }
+
+    // The static PWA build serves everything from one directory and sets this
+    // before common.js runs, so it overrides the path detection above instead of
+    // duplicating the whole configuration.
+    var basePath = window.MATHJAX_BASE_PATH || (isWorkarea
+        ? (version ? configBasePath + '/' + version + '/app/common/exe_math' : configBasePath + '/app/common/exe_math')
+        : (isIndex ? 'libs/exe_math' : '../libs/exe_math'));
+
+    // MathJax 4 makes five of these usable that the 3.2.2 bundle could not load:
+    // begingroup, colorv2, dsfont, texhtml and units.
+    // 'bbm' and 'bboldx' stay out on weight, not availability: MathJax does publish
+    // @mathjax/mathjax-{bbm,bboldx}-font-extension (svg.js is 206 KB and 141 KB), so
+    // enabling them is a matter of vendoring two more files the way mhchem and dsfont
+    // are. Nobody has asked for either macro set; revisit if someone does.
+    var externalExtensions = [
+        'amscd', 'bbox', 'begingroup', 'boldsymbol', 'braket', 'bussproofs',
+        'cancel', 'cases', 'centernot', 'color', 'colortbl', 'colorv2', 'dsfont',
+        'empheq', 'enclose', 'extpfeil', 'gensymb', 'html', 'mathtools', 'mhchem',
+        'noerrors', 'physics', 'setoptions', 'tagformat', 'texhtml', 'textcomp',
+        'unicode', 'units', 'upgreek', 'verb'
+    ];
+
+    return {
+        tex: {
+            inlineMath: [["\\(", "\\)"]],
+            displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+            processEscapes: true,
+            tags: 'ams',
+            packages: { '[+]': externalExtensions }
+        },
+        loader: {
+            paths: {
+                mathjax: basePath,
+                // MathJax 4 fetches the font's glyph ranges (\mathbb, \mathcal,
+                // \mathfrak, stretchy arrows...) on first use, and the stock value here
+                // is https://cdn.jsdelivr.net/npm/@mathjax. That would put an external
+                // request inside every exported package and leave the glyph missing
+                // wherever there is no network. The ranges are vendored under
+                // exe_math/fonts, so point the token at them and nothing can leave the
+                // origin. See scripts/vendor-mathjax.ts (VENDORED_FONT_RANGES).
+                fonts: '[mathjax]/fonts'
+            },
+            load: externalExtensions.map(function(ext) { return '[tex]/' + ext; })
+                // Hidden MathML for screen readers. MathJax 4 leaves this off because it
+                // prefers the speech extension, but speech needs a web worker and a
+                // fetch, neither of which survives an export opened from the filesystem.
+                // Assistive MathML has no such dependency, so it is our accessibility floor.
+                .concat(['a11y/assistive-mml'])
+        },
+        svg: {
+            // MathJax 4 turns in-line line breaking on by default. With SVG output
+            // that is not one <svg> per formula but one per break opportunity (every
+            // top-level `=`, `+`, `\mid`, `\,`), joined by <mjx-break> so the browser
+            // can wrap between them. LatexPreRenderer serialises a single <svg>, so
+            // `\( x = 3 = 4 = 5 \)` reached the preview and every export as a lone
+            // `x` (issue #2440). Pre-rendered SVG is static and cannot reflow anyway,
+            // and this is the 3.2.2 behaviour every existing export was built with.
+            // ServerLatexPreRenderer sets the same option for CLI and API exports.
+            linebreaks: {
+                inline: false
+            }
+        },
+        options: {
+            // Exclude navbar dropdown menus from MathJax processing (File, Edit, etc.)
+            // Note: nav-element is NOT excluded - page titles with LaTeX must be processed
+            ignoreHtmlClass: 'tex2jax_ignore|dropdown-menu|dropdown-item|modal',
+            // Skip processing inside these HTML tags
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            enableAssistiveMml: true,
+            // The Speech Rule Engine is not vendored (ADR-2259-03), and speech lives
+            // inside the combined component, so deleting the files is not enough: the
+            // menu would still offer the toggles and each one would request a file that
+            // is not there, leaving typesetPromise() unsettled and the queue stalled.
+            //
+            // These have to be set as *menu* settings rather than document options.
+            // MathJax builds the menu inside the document constructor and then writes
+            // enableSpeech/enableBraille/enableComplexity/enableExplorer back onto the
+            // document from them, so anything set directly on `options` is overwritten
+            // a moment later. `enrich: false` is the single lever: enrichment gates all
+            // four. assistiveMml stays true — it is the floor, and it is independent.
+            menuOptions: {
+                settings: {
+                    enrich: false,
+                    speech: false,
+                    braille: false,
+                    collapsible: false,
+                    assistiveMml: true
+                }
+            }
+        },
+        startup: {
+            ready: function() {
+                // Before defaultReady: the menu reads its persisted settings while the
+                // document is being built, so a stale renderer choice has to be gone by
+                // then. See $exe.math.forgetUnavailableMenuSettings.
+                if (typeof $exe !== 'undefined' && $exe.math) {
+                    $exe.math.forgetUnavailableMenuSettings();
+                }
+                MathJax.startup.defaultReady();
+                // Guarded: anything thrown here leaves MathJax permanently un-started,
+                // which would cost every formula on the page to tidy up one menu.
+                if (typeof $exe !== 'undefined' && $exe.math) {
+                    $exe.math.silenceUnvendoredFontRanges();
+                    $exe.math.hideUnavailableMenuEntries();
+                }
+            }
+        }
+    };
+})();
+
+var $exe = {
+
+    options: {
+        // Accessibility toolbar
+        atools: {
+            modeToggler: false,
+            translator: false,
+            i18n: {}
+        }
+    },
+
+    /**
+     * Project-wide pass score: the mark out of 10 a learner has to reach for an
+     * activity to count as passed. An iDevice that does not define its own value
+     * inherits this one, and inherits it live: the value is resolved when the
+     * page runs, never copied into the saved component, so changing the project
+     * option updates every activity that has not been customised.
+     *
+     * This file runs in two places, and the accessor has to work in both:
+     * - Exported and previewed pages, which carry the value in a META tag
+     *   written by src/shared/export/renderers/PageRenderer.ts.
+     * - The editor, where the live Y.Doc is the source of truth and any META
+     *   would be stale.
+     *
+     * Mirrors src/shared/export/metadata-properties.ts -- the constants, the
+     * META name and the normalisation rule live in both and must move together.
+     */
+    passScore: {
+
+        DEFAULT: 5,
+        MIN: 0,
+        MAX: 10,
+        META_NAME: 'exe-pass-score',
+        EVERY_ACTIVITY_META_NAME: 'exe-pass-score-every-activity',
+
+        /**
+         * Whether the page requires every activity to reach its own pass mark,
+         * rather than the weighted mean of the marks. Only an exported page
+         * can say so: it decides the SCORM verdict, which the editor never
+         * computes.
+         *
+         * Mirrors getPassScoreEveryActivity() in the SCORM 1.2 runtime
+         * (exe-scorm12-policy.js), which reads the same META on its own.
+         *
+         * @returns {boolean} True only when the page declares it.
+         */
+        requiresEveryActivity: function () {
+            var meta = document.querySelector('meta[name="' + $exe.passScore.EVERY_ACTIVITY_META_NAME + '"]');
+            return !!meta && meta.getAttribute("content") === "true";
+        },
+
+        /**
+         * Clamp a value into the 0-10 one-decimal domain.
+         *
+         * Anything that is not a finite number resolves to the default rather
+         * than to 0, because 0 legitimately means "any mark passes" and has to
+         * stay distinguishable from "not set".
+         *
+         * @param {*} value Raw value from a META tag, the Y.Doc or a form.
+         * @returns {number} A number in [0, 10] with at most one decimal.
+         */
+        normalize: function (value) {
+            var parsed = typeof value == "number" ? value : parseFloat(value);
+            if (!isFinite(parsed)) return $exe.passScore.DEFAULT;
+            var clamped = Math.min($exe.passScore.MAX, Math.max($exe.passScore.MIN, parsed));
+            return Math.round(clamped * 10) / 10;
+        },
+
+        /**
+         * The pass score in force for the current page.
+         *
+         * @returns {number} A number in [0, 10] with at most one decimal.
+         */
+        get: function () {
+            var meta = document.querySelector('meta[name="' + $exe.passScore.META_NAME + '"]');
+            if (meta) return $exe.passScore.normalize(meta.getAttribute("content"));
+
+            // Editor: read the live document rather than any rendered copy.
+            var app = window.eXeLearning && window.eXeLearning.app;
+            var manager = app && app.project && app.project._yjsBridge
+                ? app.project._yjsBridge.getDocumentManager()
+                : null;
+            var metadata = manager && manager.getMetadata ? manager.getMetadata() : null;
+            if (metadata) return $exe.passScore.normalize(metadata.get("passScore"));
+
+            return $exe.passScore.DEFAULT;
+        },
+
+        /**
+         * The pass score in force for one iDevice.
+         *
+         * An iDevice stores only what its author chose: the mode, and the mark
+         * when they customised it. "Global" is not stored at all, so a project
+         * whose option changes moves every non-customised activity with it --
+         * this resolver is where that inheritance actually happens, and every
+         * iDevice runtime goes through it rather than repeating the condition.
+         *
+         * @param {Object} [data] The iDevice options object
+         * (`passScoreMode`, `passScoreCustom`).
+         * @returns {number} A mark in [0, 10] with at most one decimal.
+         */
+        resolve: function (data) {
+            if (data && data.passScoreMode == "custom") {
+                return $exe.passScore.normalize(data.passScoreCustom);
+            }
+            return $exe.passScore.get();
+        },
+
+        /**
+         * Convert a 0-10 pass score to the 0-100 scale the SCORM activity
+         * registry stores scores on ($exeDevices.iDevice.gamification.scorm).
+         * The conversion lives here so the two scales are never mixed by hand.
+         *
+         * @param {number} [value] Pass score; defaults to the current page's.
+         * @returns {number} The same mark on a 0-100 scale.
+         */
+        toPercent: function (value) {
+            var score = value === undefined ? $exe.passScore.get() : $exe.passScore.normalize(value);
+            return Math.round(score * 10 * 100) / 100;
+        }
+    },
+
+    init: function () {
+        var bod = $('body');
+        this.hasMultimediaGalleries = false;
+        this.setMultimediaGalleries();
+        this.setModalWindowContentSize(); // To review
+        // No MediaElement in ePub
+        if (!bod.hasClass("exe-epub")) {
+            var n = document.body.innerHTML;
+            if (this.hasMultimediaGalleries || $(".mediaelement").length > 0) {
+                $exe.loadMediaPlayer.init();
+            }
+        } else {
+            // No inline SCRIPT tags in ePub (due to Chrome app Content Security Policy)
+            bod.addClass("js");
+        }
+        $exe.setIframesProperties();
+        $exe.hasTooltips();
+        $exe.math.init();
+        $exe.mermaid.init();
+        setTimeout(function(){
+            $exe.dl.init(); // #1603
+        }, 0);
+        // Add a zoom icon to the images using CSS
+        $("a.exe-enlarge").each(function (i) {
+            var e = $(this);
+            var c = $(this).children();
+            if (c.length == 1 && c.eq(0).prop("tagName") == "IMG") {
+                e.prepend('<span class="exe-enlarge-icon"><b></b></span>');
+            }
+        });
+        // Disable autocomplete
+        $("INPUT.autocomplete-off").attr("autocomplete", "off");
+    },
+
+    // Math options (MathJax, etc.) - To review (some options might not be needed)
+    math: {
+        get engine() {
+            return $exeDevices.iDevice.gamification.math.engine;
+        },
+        get engineConfig() {
+            return $exeDevices.iDevice.gamification.math.engineConfig;
+        },
+        loadMathJax: function(callback) {
+            return $exeDevices.iDevice.gamification.math.loadMathJax(callback);
+        },
+        hasLatex: function(text) {
+            return $exeDevices.iDevice.gamification.math.hasLatex(text);
+        },
+        refresh: function(elements) {
+            return $exeDevices.iDevice.gamification.math.updateLatex(elements);
+        },
+        // Stop MathJax asking for glyph ranges this build does not ship.
+        //
+        // MathJax 4 keeps most of the font in ~40 ranges it fetches on first use, and
+        // seeds its character tables with a placeholder per code point saying which
+        // range provides it. We vendor the 13 whose code points MathJax 3.2.2 could
+        // already render, so no glyph anyone could previously see is lost; the rest
+        // would 404 against our own tree.
+        //
+        // A 404 is not a quiet degradation. loadDynamicFile() catches the first failure
+        // and marks the range `failed`; every later request for the same range rejects,
+        // which fails the whole typeset call and leaves every formula in it on screen as
+        // raw \(...\) -- including formulas with no unusual characters. Two accented
+        // letters in one iDevice were enough to blank eleven formulas.
+        //
+        // So drop the placeholders instead. getChar() then finds nothing, takes the
+        // unknown-character path and renders the glyph in the CSS `unknownFamily` serif,
+        // which is exactly what 3.2.2 did with the same characters. Dropping them rather
+        // than resolving their promises also matters for speed: getChar() deletes one
+        // placeholder per call and re-renders the whole document to retry, so leaving
+        // them in place costs a full re-render per accented letter.
+        //
+        // Returns how many placeholders were dropped, so a MathJax upgrade that renames
+        // or restructures the ranges shows up as 0 instead of failing silently.
+        silenceUnvendoredFontRanges: function() {
+            var jax = window.MathJax && window.MathJax.startup && window.MathJax.startup.document
+                && window.MathJax.startup.document.outputJax;
+            var font = jax && jax.font;
+            if (!font || !font.variant) return 0;
+            var vendored = window.MATHJAX_VENDORED_FONT_RANGES;
+            var dropped = 0;
+            Object.keys(font.variant).forEach(function(name) {
+                var chars = font.variant[name] && font.variant[name].chars;
+                if (!chars) return;
+                Object.keys(chars).forEach(function(code) {
+                    var entry = chars[code];
+                    // Glyph data is an array; a placeholder is the range descriptor.
+                    if (!entry || Array.isArray(entry) || !entry.file) return;
+                    if (vendored.indexOf(entry.file) !== -1) return;
+                    delete chars[code];
+                    dropped++;
+                });
+            });
+            // Belt and braces: if a descriptor is reachable by some path this does not
+            // cover, make it resolve rather than reject, so at worst a glyph is missing
+            // instead of the whole call failing.
+            var files = font.CLASS && font.CLASS.dynamicFiles;
+            if (files) {
+                Object.keys(files).forEach(function(range) {
+                    if (vendored.indexOf(range) !== -1) return;
+                    files[range].promise = Promise.resolve();
+                    files[range].setup = function() {};
+                });
+            }
+            return dropped;
+        },
+        // Hide the contextual-menu entries this build cannot serve.
+        //
+        //   Speech / Braille / Explorer — the Speech Rule Engine is not vendored
+        //     (ADR-2259-03). The features are already off via menuOptions.settings, but
+        //     the sections stay in the menu because they are built into the bundle, and
+        //     toggling one would request a file that is not there and stall the typeset
+        //     queue rather than fail.
+        //   Settings -> Math Renderer — only the SVG output ships. CHTML lives in a
+        //     component we do not vendor and its font is a separate 2.4 MB package.
+        //
+        // MathJax hides these itself only when no loader is present, which is not our
+        // case, so it has to be explicit. Returns the number of entries hidden so the
+        // caller can tell "nothing to do" from "the menu moved under us".
+        hideUnavailableMenuEntries: function() {
+            var menu = window.MathJax && window.MathJax.startup && window.MathJax.startup.document
+                && window.MathJax.startup.document.menu;
+            if (!menu || !menu.menu || typeof menu.menu.findID !== 'function') return 0;
+            // 'Accessibility' is the label heading the three sections; without them it
+            // would sit above nothing.
+            var paths = [['Accessibility'], ['Speech'], ['Braille'], ['Explorer'], ['Settings', 'Renderer']];
+            var hidden = 0;
+            paths.forEach(function(path) {
+                var item = menu.menu.findID.apply(menu.menu, path);
+                if (item && typeof item.hide === 'function') {
+                    item.hide();
+                    hidden++;
+                }
+            });
+            return hidden;
+        },
+        // Drop persisted menu settings that this build cannot honour. MathJax keeps
+        // them in localStorage for the whole origin and acts on them while the document
+        // is being built, so this has to run before defaultReady(), and a value picked up
+        // on any other MathJax page of the same site counts.
+        //
+        // Two keys matter:
+        //
+        //   renderer — CHTML is not vendored and its font is a separate package, so a
+        //     stored choice makes every page request a missing component at startup,
+        //     without anyone opening the menu.
+        //
+        //   enrich / speech / braille / collapsible / explorer — all gate the Speech
+        //     Rule Engine, which is not vendored (ADR-2259-03). A value stored before
+        //     it was removed, or by any other MathJax page on this origin, would turn
+        //     a feature back on and stall the typeset queue on a missing file.
+        //
+        //   assistiveMml — the hidden MathML is our accessibility floor (ADR-2259-02),
+        //     but MathJax treats it as an alternative to speech rather than a floor:
+        //     toggling Speech in the menu calls setValue(false) on it and persists that.
+        //     A reader who did so once gets no MathML from then on, and in an export
+        //     opened from the filesystem speech cannot start either, so they would be
+        //     left with nothing. Only a stored `false` is dropped; a stored `true` is
+        //     already what we want.
+        //
+        // Note the reach: because the key is per origin, this also rewrites the setting
+        // for any other MathJax page hosted on the same origin. Accepted deliberately —
+        // both keys name something this build cannot honour, and the alternative is
+        // leaving a reader's maths silently unreadable.
+        forgetUnavailableMenuSettings: function() {
+            var KEY = 'MathJax-Menu-Settings';
+            try {
+                var stored = window.localStorage.getItem(KEY);
+                if (!stored) return false;
+                var settings = JSON.parse(stored);
+                if (!settings || typeof settings !== 'object') return false;
+                var dropped = false;
+                ['renderer', 'enrich', 'speech', 'braille', 'collapsible', 'explorer'].forEach(function(key) {
+                    if (key in settings) {
+                        delete settings[key];
+                        dropped = true;
+                    }
+                });
+                if (settings.assistiveMml === false) {
+                    delete settings.assistiveMml;
+                    dropped = true;
+                }
+                if (!dropped) return false;
+                if (Object.keys(settings).length) {
+                    window.localStorage.setItem(KEY, JSON.stringify(settings));
+                } else {
+                    window.localStorage.removeItem(KEY);
+                }
+                return true;
+            } catch (e) {
+                // Private mode, disabled storage or corrupt JSON: nothing to forget.
+                return false;
+            }
+        },
+        // Create links to the code and the image (different possibilities)
+        createLinks: function (math) {
+            var mathjax = false;
+            if (!math) {
+                var math = $(".exe-math");
+                mathjax = true;
+            }
+            math.each(function () {
+                var e = $(this);
+                if ($(".exe-math-links", e).length > 0) return;
+                var img = $(".exe-math-img img", e);
+                var txt = "LaTeX";
+                if (e.html().indexOf("<math") != -1) txt = "MathML";
+                var html = '';
+                if (img.length == 1) html += '<a href="' + img.attr("src") + '" target="_blank">GIF</a>';
+                if (!mathjax) {
+                    if (html != "") html += '<span> - </span>';
+                    html += '<a href="#" class="exe-math-code-lnk">' + txt + '</a>';
+                }
+                if (html != "") {
+                    html = '<p class="exe-math-links">' + html + '</p>';
+                    e.append(html);
+                }
+                $(".exe-math-code-lnk").click(function () {
+                    $exe.math.showCode(this);
+                    return false;
+                });
+            });
+        },
+        // Open a new window with the LaTeX or MathML code
+        showCode: function (e) {
+            var tit = e.innerHTML;
+            var block = $(e).parent().parent();
+            var code = $(".exe-math-code", block);
+            code = code.html();
+            // The SVG renderer generates SVG + MathML
+            if (code.indexOf('svg><math') != -1) {
+                code = code.split('svg><math');
+                code = '<math' + code[1];
+            }
+            var a = window.open(tit);
+            a.document.open("text/html");
+            var html = '<!DOCTYPE html><html><head><title>' + tit + '</title>';
+            html += '<style type="text/css">body{font:10pt/1.5 Verdana,Arial,Helvetica,sans-serif;margin:10pt;padding:0}</style>';
+            html += '</head><body><pre><code>';
+            html += code;
+            html += '</code></pre></body></html>';
+            a.document.write(html);
+            a.document.close();
+        },
+        // Load MathJax or just create the links to the code and/or image
+        init: function () {
+            $("body").addClass("exe-auto-math"); // Always load it
+            var math = $(".exe-math");
+            var mathjax = false;
+
+            // Check if content is pre-rendered (SVG+MathML)
+            // Pre-rendered LaTeX uses class "exe-math-rendered"
+            // If ALL LaTeX is pre-rendered and no explicit exe-math-engine elements exist,
+            // no need for MathJax library (similar pattern to Mermaid pre-rendering).
+            // IMPORTANT: in mixed content (some pre-rendered + some raw LaTeX),
+            // we MUST still load MathJax for the raw formulas.
+            var hasPreRendered = $(".exe-math-rendered").length > 0;
+            var hasExplicitEngine = $(".exe-math-engine").length > 0;
+
+            if (hasPreRendered && !hasExplicitEngine) {
+                // Remove already rendered wrappers before scanning for pending raw LaTeX.
+                // This avoids false positives from data-latex attributes and rendered internals.
+                var bodyHtml = $('body').html() || '';
+                var htmlWithoutRendered = bodyHtml.replace(
+                    /<span\b[^>]*class\s*=\s*["'][^"']*\bexe-math-rendered\b[^"']*["'][^>]*>[\s\S]*?<\/span>/gi,
+                    ''
+                );
+
+                var hasPendingRawLatex = /(?:\\\(|\\\[|\$\$|\\begin\{.*?}|\\(?:eq)?ref\{)/.test(htmlWithoutRendered);
+
+                if (!hasPendingRawLatex) {
+                    // Content was fully pre-rendered to SVG+MathML, no need for MathJax library
+                    // Still create links for code/image access if needed
+                    $exe.math.createLinks(math);
+                    return;
+                }
+            }
+
+            if (math.length > 0 || $("body").hasClass("exe-auto-math")) {
+                if ($("body").hasClass("exe-auto-math")) {
+                    var hasLatex = /(?:\\\(|\\\[|\\begin\{.*?})/.test($('body').html());
+                    if (hasLatex) mathjax = true;
+                }
+                math.each(function () {
+                    var e = $(this);
+                    if (e.hasClass("exe-math-engine")) {
+                        mathjax = true;
+                    }
+                });
+                if (mathjax) {
+                    math.each(function () {
+                        var isInline = false;
+                        var codeW = $(".exe-math-code", this);
+                        var code = codeW.html().trim();
+                        if (code.indexOf("\\(") == 0 || (code.indexOf("$") == 0 && code.indexOf("$$") != 0)) isInline = true;
+                        if (isInline) $(this).addClass("exe-math-inline");
+                        if (code.indexOf("<math") == -1) {
+                            if (isInline) {
+                                if (code.indexOf("$") == 0 && code.substr(code.length - 1) == "$") {
+                                    // $x$ is valid inline
+                                } else {
+                                    if (code.indexOf("\\(") != 0 && code.substr(code.length - 2) != "\\)") {
+                                        // Wrap the code: \( ... \)
+                                        codeW.html("\\(" + code + "\\)");
+                                    }
+                                }
+                            } else {
+                                if (code.indexOf("$$") == 0 && code.substr(code.length - 2) == "$$") {
+                                    // $$x$$ is valid block
+                                } else {
+                                    if (code.indexOf("\\[") != 0 && code.substr(code.length - 2) != "\\]") {
+                                        // Wrap the code: \[ ... \]
+                                        codeW.html("\\[" + code + "\\]");
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    $exe.math.loadMathJax(function () {
+                        // For SPA preview: only typeset active page (prevents replaceChild errors)
+                        var activePage = document.querySelector('.spa-page.active');
+                        if (activePage) {
+                            MathJax.typesetPromise([activePage]).catch(function(e) {
+                                console.warn('[MathJax] Typeset error:', e.message);
+                            });
+                        } else {
+                            // Not a SPA preview, typeset everything
+                            MathJax.typesetPromise().catch(function(e) {
+                                console.warn('[MathJax] Typeset error:', e.message);
+                            });
+                        }
+                        $exe.math.createLinks();
+                    });
+                } else {
+                    $exe.math.createLinks(math);
+                }
+            }
+        }
+    },
+    // Mermaid options
+    mermaid: {
+        // Mermaid script path - computed dynamically to handle static mode
+        engine: (function() {
+            var config = window.eXeLearning?.config;
+            if (typeof config === 'string') {
+                try { config = JSON.parse(config); } catch(e) { config = null; }
+            }
+            // Static mode: use relative path without version prefix
+            if (config?.isStaticMode || config?.isOfflineInstallation) {
+                return './app/common/mermaid/mermaid.min.js';
+            }
+            // Server mode: use versioned path
+            if (config?.baseURL !== undefined) {
+                return config.baseURL + (config.basePath || '') + '/' + window.eXeLearning.version + '/app/common/mermaid/mermaid.min.js';
+            }
+            // Export mode
+            var isIndex = $("html").prop("id") === "exe-index";
+            // Double check with script src if ID check fails (robustness)
+            if (!isIndex) {
+                 var scripts = document.getElementsByTagName('script');
+                 for (var i = 0; i < scripts.length; i++) {
+                     var src = scripts[i].getAttribute('src');
+                     if (src && (src === 'libs/common.js' || src === './libs/common.js')) {
+                         isIndex = true;
+                         break;
+                     }
+                 }
+            }
+            return (isIndex ? "libs/mermaid/mermaid.min.js" : "../libs/mermaid/mermaid.min.js");
+        })(),
+        reload_pending: false,
+        initialized: false,
+        loading: false,
+        loadMermaid: function () {
+            // Dynamic path resolution
+            var enginePath = this.engine;
+            var config = window.eXeLearning?.config;
+            if (typeof config === 'string') {
+                try { config = JSON.parse(config); } catch(e) { config = null; }
+            }
+            // Static mode: use relative path without version prefix
+            if (config?.isStaticMode || config?.isOfflineInstallation) {
+                enginePath = './app/common/mermaid/mermaid.min.js';
+            } else if (config?.baseURL !== undefined) {
+                // Server mode: use versioned path
+                enginePath = config.baseURL + (config.basePath || '') + '/' + window.eXeLearning.version + '/app/common/mermaid/mermaid.min.js';
+            }
+
+            if (typeof window.mermaid === 'undefined') {
+                // Already being fetched: do not inject the script twice
+                if (this.loading) return;
+                this.loading = true;
+                const script = document.createElement("script");
+                script.src = enginePath;
+                script.async = true;
+                script.onerror = function () {
+                    $exe.mermaid.loading = false;
+                };
+                script.onload = function () {
+                    $exe.mermaid.loading = false;
+                    mermaid = window.mermaid;
+                    mermaid.initialize({
+                        startOnLoad: false,
+                        suppressErrorRendering: true,
+                        logLevel: 'fatal',
+                        // Gantt configuration to prevent negative width errors
+                        gantt: {
+                            useMaxWidth: true,
+                            useWidth: undefined
+                        },
+                        flowchart: {
+                            useMaxWidth: true
+                        }
+                    });
+                    $exe.mermaid.initialized = true;
+                    $exe.mermaid.renderDiagrams();
+                };
+                document.head.appendChild(script);
+            } else if (this.initialized) {
+                // debounce reloading to avoid multiple calls
+                if (!this.reload_pending) {
+                    this.reload_pending = true;
+                    setTimeout(function () {
+                        $exe.mermaid.reload_pending = false;
+                        $exe.mermaid.renderDiagrams();
+                    }, 100);
+                }
+            }
+        },
+        renderDiagrams: function (retryCount) {
+            retryCount = retryCount || 0;
+            var maxRetries = 10;
+            // Include elements without data-processed OR with data-processed="pending" (failed previous render)
+            var mermaidNodes = $(".mermaid:not([data-processed]), .mermaid[data-processed='pending']");
+
+            if (mermaidNodes.length === 0) return;
+
+            // Check if elements have valid dimensions
+            var readyNodes = [];
+            var pendingNodes = [];
+
+            mermaidNodes.each(function () {
+                var $el = $(this);
+                // Element needs to be visible AND have width > 0
+                if ($el.is(':visible') && $el.width() > 0) {
+                    readyNodes.push(this);
+                    // Remove pending status so mermaid.run() will process it
+                    $el.removeAttr('data-processed');
+                } else {
+                    pendingNodes.push(this);
+                }
+            });
+
+            // Only call mermaid.run() if there are ready nodes
+            // IMPORTANT: Pass the specific nodes to render, not all .mermaid elements
+            // This prevents Mermaid from rendering hidden elements with 0 width
+            if (readyNodes.length > 0) {
+                try {
+                    // Pass only the ready nodes to mermaid.run()
+                    mermaid.run({ nodes: readyNodes });
+                } catch (e) {
+                    // Silently handle rendering errors
+                }
+            }
+
+            // Mark pending nodes so we know they need retry later
+            // (when the page containing them becomes visible)
+            pendingNodes.forEach(function(node) {
+                if (!node.hasAttribute('data-processed')) {
+                    node.setAttribute('data-processed', 'pending');
+                }
+            });
+
+            // Retry for pending nodes that don't have dimensions yet
+            if (pendingNodes.length > 0 && retryCount < maxRetries) {
+                setTimeout(function () {
+                    $exe.mermaid.renderDiagrams(retryCount + 1);
+                }, 200);
+            }
+        },
+        init: function () {
+            // Check for mermaid elements that need rendering
+            // Pre-rendered diagrams have class exe-mermaid-rendered (not .mermaid)
+            // so they won't be matched by this selector.
+            // Include ALL .mermaid elements (even data-processed="pending" which means
+            // a previous render failed) so Mermaid library gets loaded and they can retry.
+            var mermaidNodes = $(".mermaid");
+
+            // Load Mermaid if there are any mermaid elements
+            if (mermaidNodes.length > 0) {
+                this.loadMermaid();
+            }
+        }
+    },
+    // Modal Window: Height problem in some browsers #328
+    // context: optional node to limit the fix to (e.g. an iDevice rendered after init)
+    setModalWindowContentSize: function (context) {
+        if (window.chrome) {
+            $(".exe-dialog-text img", context).each(
+                function () {
+                    var e = $(this);
+                    var h = e.attr("height");
+                    var w = e.attr("width");
+                    if (e.height() == 0 && e.css("height") == "0px" && h && w) {
+                        if (!isNaN(h) && h > 0 && !isNaN(w) && w > 0) {
+                            var maxW = 480;
+                            if (w < maxW) maxW = w;
+                            h = Math.round(maxW * h / w);
+                            e.css("height", h + "px");
+                        }
+                    }
+                }
+            );
+        }
+    },
+
+    // Transform links to audios or videos (with rel^='lightbox') in links to inline content
+    // (see prettyPhoto documentation)
+    // context: optional node whose links have to be transformed (e.g. an iDevice rendered after init)
+    setMultimediaGalleries: function (context) {
+        if (typeof ($.prettyPhoto) != 'undefined') {
+            var lightboxLinks = $("a[rel^='lightbox']", context);
+            lightboxLinks.each(function () {
+                var ref = $(this).attr("href");
+
+                // Within eXe replace the blob URL with the URL of the asset to check if isAudio or isVideo
+                if (typeof ref == 'string' && ref.startsWith('blob:') && typeof eXeLearning !== 'undefined' && typeof eXeLearningAssetResolver !== 'undefined') {
+                    var assetURL = eXeLearningAssetResolver.getAssetUrlFromBlob(ref);
+                    if (assetURL !== null) {
+                        $(this).attr("href", assetURL);
+                        ref = assetURL;
+                    }
+                }
+
+                var _ref = ref.toLowerCase();
+                var isAudio = _ref.indexOf(".mp3") != -1;
+                var isVideo = _ref.indexOf(".mp4") != -1 || _ref.indexOf(".flv") != -1 || _ref.indexOf(".ogg") != -1 || _ref.indexOf(".ogv") != -1;
+                if (isAudio || isVideo) {
+                    // First free id: this can run more than once per page
+                    var n = 0;
+                    while (document.getElementById("media-box-" + n)) n++;
+                    var id = "media-box-" + n;
+                    $(this).attr("href", "#" + id);
+                    var hiddenPlayer = $('<div class="exe-media-box js-hidden" id="' + id + '"></div>');
+                    if (isAudio) hiddenPlayer.html('<div class="exe-media-audio-box"><audio controls="controls" src="' + ref + '" class="exe-media-box-element exe-media-box-audio"><a href="' + ref + '">audio/mpeg</a></audio></div>');
+                    else hiddenPlayer.html('<div class="exe-media-video-box"><video width="480" height="385" controls="controls" class="exe-media-box-element"><source src="' + ref + '" /></video></div>');
+                    $("body").append(hiddenPlayer);
+                    $exe.hasMultimediaGalleries = true;
+                }
+            });
+            // Re-query after $exeFX.init() has finished rebuilding exe-fx DOM (e.g. accordion rft()).
+            // Both prettyPhoto and the gallery-error fallback use the same post-FX-init set.
+            // The whole page is bound even with a context: prettyPhoto builds its galleries
+            // from the links it is bound to.
+            setTimeout(function() {
+                var currentLightboxLinks = $("a[rel^='lightbox']");
+                currentLightboxLinks.prettyPhoto({
+                    social_tools: "",
+                    deeplinking: false,
+                    opacity: 0.85,
+                    changepicturecallback: function () {
+                        var block = $("#pp_full_res")
+                        var media = $(".exe-media-box-element", block);
+                        if ($exe.loadMediaPlayer != undefined) {
+                            if ($exe.loadMediaPlayer.isReady) {
+                                // No mediaelementplayer in prettyPhoto
+                                // if (media.length == 1) media.mediaelementplayer();
+                                $exe.loadMediaPlayer.isCalledInBox = true;
+                            }
+                        }
+                        // Add a download link and a CSS class to pp_content_container (see exe_lightbox.css)
+                        var cont = $(".pp_content_container");
+                        cont.attr("class", "pp_content_container");
+                        var src = null;
+                        if (media.length == 1) {
+                            if (media[0].hasAttribute('src')) {
+                                src = media.attr('src');
+                            } else {
+                                var sourceEl = media.find('source[src]').first();
+                                if (sourceEl.length) src = sourceEl.attr('src');
+                            }
+                        }
+                        if (src) {
+                            if (media.hasClass("exe-media-box-audio")) cont.attr("class", "pp_content_container with-audio");
+                            // Extension = last dot-segment of the filename, without query string or fragment
+                            var fileName = src.split("/").pop().split("?")[0].split("#")[0];
+                            var dotIndex = fileName.lastIndexOf(".");
+                            var ext = dotIndex > -1 ? fileName.substring(dotIndex + 1) : undefined;
+                            if (typeof ext == 'undefined' || ext == 'undefined' || ext == '') ext = $exe_i18n.download;
+                            $(".pp_details .pp_description").append(' <span class="exe-media-download"><a href="' + src + '" title="' + $exe_i18n.download + '" download>' + ext + '</a></span>');
+                        } else {
+                            // Hide the title at the bottom (we use h2.pp_title instead)
+                            block = $(".pp_inline", block);
+                            if (block.length == 1) $(".pp_description").hide();
+                        }
+                        // Recalculate pp_content height for video elements (screen height + 50px for controls)
+                        var ppVideo = $("#pp_full_res video");
+                        if (ppVideo.length) {
+                            var videoHeight = ppVideo[0].getBoundingClientRect().height;
+                            if (videoHeight > 0) {
+                                $(".pp_content").css('height', videoHeight + 50);
+                            }
+                        }
+                    }
+                });
+                // If there are galleries but no lightbox links, there's an error (e.g. some ePub readers).
+                // See issue #258
+                var eXeGalleries = $('.GalleryIdevice');
+                if (!context && currentLightboxLinks.length == 0 && eXeGalleries.length > 0 && typeof (exe_editor_mode) == "undefined") {
+                    // We execute this code only outside eXe or the Image Gallery edition will fail (see issue #317)
+                    $('.exeImageGallery a').each(function () {
+                        this.title += " ~ [" + this.href + "]";
+                        this.href = "#";
+                        this.onclick = function () {
+                            var ul = $(this).parent().parent();
+                            if (ul.length == 1 && ul.attr('id') != "") {
+                                if ($("#" + ul.attr('id') + "-warning").length == 0) {
+                                    // Due to G. Chrome's Content Security Policy
+                                    var txt = $exe_i18n.dataError;
+                                    if ($('body').hasClass('exe-epub3')) txt += '<br /><br />' + $exe_i18n.epubJSerror;
+                                    ul.prepend('<div id="' + ul.attr('id') + '-warning">' + txt + '</div>');
+                                }
+                            }
+                        }
+                    });
+                }
+            }, 0);
+        }
+    },
+
+    // Load MediaElement if required - To review (Shall eXe still use MediaElement?)
+    loadMediaPlayer: {
+        isCalledInBox: false, // Box = prettyPhoto with video or audio
+        isReady: false,
+        // Start MediaElement
+        init: function () {
+            // Multimedia galleries
+            $exe.mediaelements = $(".mediaelement");
+            $exe.mediaelements.each(function () {
+                // Only process actual audio/video elements, not MEJS wrapper containers
+                // When MEJS wraps an element, the container also gets class 'mediaelement'
+                // which can cause double-initialization issues
+                var tagName = this.localName || this.tagName?.toLowerCase();
+                if (tagName !== "audio" && tagName !== "video") {
+                    return; // Skip non-media elements (like mejs-container divs)
+                }
+                // Skip if already processed by MEJS
+                if (this.player !== undefined) {
+                    return;
+                }
+                if (tagName === "video") {
+                    var e = this.width;
+                    var t = $(window).width();
+                    if (e > t) {
+                        var n = t - 20;
+                        var r = parseInt(this.height * n / e);
+                        this.width = n;
+                        this.height = r
+                    }
+                }
+                // Disable the JavaScript player if the video has no .srt subtitles
+                if ($("track", this).length > 0) {
+                    var hasSrt = false;
+                    $("track", this).each(function() {
+                        if (typeof(this.src) == 'string') {
+                            if (this.src.endsWith('.srt')) {
+                                hasSrt = true;
+                            }
+                        }
+                    });
+                    if (hasSrt) $(this).mediaelementplayer();
+                }
+            });
+            $exe.loadMediaPlayer.isReady = true;
+            // No JavaScript player in prettyPhoto
+            // if (!$exe.loadMediaPlayer.isCalledInBox) $("#pp_full_res .exe-media-box-element").mediaelementplayer();
+        }
+    },
+
+    // Apply the 'sfhover' class to li elements when they are 'moused over'
+    // Very old browsers need this because they don't support li:hover
+    sfHover: function () {
+        var e = document.getElementById("siteNav");
+        if (e) {
+            var t = e.getElementsByTagName("LI");
+            for (var n = 0; n < t.length; n++) {
+                t[n].onmouseover = function () {
+                    this.className = this.className.replace(new RegExp("( ?|^)sfout\\b"), "");
+                    this.className += (this.className.length > 0 ? " " : "") + "sfhover";
+                };
+                t[n].onmouseout = function () {
+                    this.className = this.className.replace(new RegExp("( ?|^)sfhover\\b"), "");
+                    this.className += (this.className.length > 0 ? " " : "") + "sfout";
+                }
+            }
+            // Enable Keyboard:
+            var r = e.getElementsByTagName("A");
+            for (var n = 0; n < r.length; n++) {
+                r[n].onfocus = function () {
+                    this.className += (this.className.length > 0 ? " " : "") + "sffocus";
+                    this.parentNode.className += (this.parentNode.className.length > 0 ? " " : "") + "sfhover";
+                    if (this.parentNode.parentNode.parentNode.nodeName == "LI") {
+                        this.parentNode.parentNode.parentNode.className += (this.parentNode.parentNode.parentNode.className.length > 0 ? " " : "") + "sfhover";
+                        if (this.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "LI") {
+                            this.parentNode.parentNode.parentNode.parentNode.parentNode.className += (this.parentNode.parentNode.parentNode.parentNode.parentNode.className.length > 0 ? " " : "") + "sfhover"
+                        }
+                    }
+                };
+                r[n].onblur = function () {
+                    this.className = this.className.replace(new RegExp("( ?|^)sffocus\\b"), "");
+                    this.parentNode.className = this.parentNode.className.replace(new RegExp("( ?|^)sfhover\\b"), "");
+                    if (this.parentNode.parentNode.parentNode.nodeName == "LI") {
+                        this.parentNode.parentNode.parentNode.className = this.parentNode.parentNode.parentNode.className.replace(new RegExp("( ?|^)sfhover\\b"), "");
+                        if (this.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "LI") {
+                            this.parentNode.parentNode.parentNode.parentNode.parentNode.className = this.parentNode.parentNode.parentNode.parentNode.parentNode.className.replace(new RegExp("( ?|^)sfhover\\b"), "")
+                        }
+                    }
+                }
+            }
+        }
+    },
+
+    // RGB color to HEX
+    rgb2hex: function (a) {
+        if (/^#[0-9A-F]{6}$/i.test(a)) return a;
+        a = a.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+
+        function hex(x) {
+            return ("0" + parseInt(x).toString(16)).slice(-2)
+        }
+        return "#" + hex(a[1]) + hex(a[2]) + hex(a[3])
+    },
+
+    // Use black or white text depending on the background color
+    useBlackOrWhite: function (h) {
+        var r = parseInt(h.substr(0, 2), 16);
+        var g = parseInt(h.substr(2, 2), 16);
+        var b = parseInt(h.substr(4, 2), 16);
+        var y = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return (y >= 128) ? 'black' : 'white'
+    },
+
+    // Definition lists with improved presentation
+    dl: {
+        init: function () {
+            var l = $("dl.exe-dl");
+            if (l.length == 0) return false;
+            var h, e, t, bg, tc, s, id;
+            l.each(function (i) {
+                e = this;
+                bg = $exe.rgb2hex($(e).css("color"));
+                tc = $exe.useBlackOrWhite(bg.replace("#", ""));
+                s = " style='text-decoration:none;background:" + bg + ";color:" + tc + "'";
+                if (e.id == "") e.id = "exe-dl-" + i;
+                id = e.id;
+                $("dt", e).each(function () {
+                    t = this;
+                    h = $(t).html();
+                    $(t).html("<a href='#' class='exe-dd-toggler exe-dd-toggler-closed exe-dl-" + i + "-a'><span class='icon'" + s + ">+ </span>" + h + "</a>")
+                });
+            });
+            $('a.exe-dd-toggler').click(function () {
+                var e = $(this);
+                var s = $("span.icon", this);
+                var dd = $(this).parent().next("dd");
+                if (e.hasClass("exe-dd-toggler-closed")) {
+                    e.removeClass("exe-dd-toggler-closed");
+                    s.html("- ");
+                    dd.show();
+                } else {
+                    e.addClass("exe-dd-toggler-closed");
+                    s.html("+ ");
+                    dd.hide();
+                }
+                return false;
+            });
+        }
+    },
+
+    // If the page has tooltips we load the JS file
+    hasTooltips: function () {
+        if ($("A.exe-tooltip").length > 0) {
+            var p = "";
+            if (typeof (eXeLearning) !== 'undefined') {
+                // TODO: UNIFY - Fallback for branch compatibility.
+                // In 'main' branch: eXeLearning.symfony.fullURL exists (added by Symfony backend)
+                // In this branch: only eXeLearning.config.fullURL exists (set in workarea.njk)
+                // To unify: Either add 'symfony' property to workarea.njk template,
+                // or update main branch to use 'config' consistently.
+                p = (eXeLearning.symfony?.fullURL || eXeLearning.config?.fullURL || '') + "/app/common/exe_tooltips/";
+            } else {
+                var ref = window.location.href;
+                // Check if it's the home page using robust checks (ID or script path)
+                p = "libs/exe_tooltips/";
+                var isIndex = document.getElementById("exe-index") !== null;
+                if (!isIndex) {
+                    var scripts = document.getElementsByTagName('script');
+                    for (var i = 0; i < scripts.length; i++) {
+                        var src = scripts[i].getAttribute('src');
+                        if (src && (src === 'libs/common.js' || src === './libs/common.js')) {
+                            isIndex = true;
+                            break;
+                        }
+                    }
+                }
+                if (!isIndex) p = "../" + p;
+            }
+            if (typeof($exe.tooltips) === 'undefined') {
+                $exe.loadScript(p + "exe_tooltips.js", "$exe.tooltips.init('" + p + "')")
+            } else {
+                 $exe.tooltips.init(p);
+            }
+        }
+    },
+
+    // Internet Explorer? - To review (Export this function?)
+    isIE: function () {
+        var e = navigator.userAgent.toLowerCase();
+        return e.indexOf("msie") != -1 ? parseInt(e.split("msie")[1]) : false
+    },
+
+    // Add "http" to the IFRAMES without protocol in local pages and create a hidden link for the print version
+    setIframesProperties: function () {
+        var p = window.location.protocol;
+        var t = false;
+        if (p != "http" && p != "https") t = true;
+        $("iframe").each(function () {
+            var i = $(this);
+            var s = i.attr("src");
+            if (typeof (s) == "string") {
+                if (t && s.indexOf("//") == 0) $(this).attr("src", "http:" + s);
+                s = i.attr("src");
+                if (!i.hasClass("external-iframe") && s.indexOf("http") == 0) {
+                    i.addClass("external-iframe").before("<span class='external-iframe-src' style='display:none'><a href='" + s + "'>" + s + "</a></span>");
+                }
+            }
+        });
+    },
+
+    // Load a JavaScript or CSS file (in HEAD)
+    loadScript: function (url, callback) {
+        var s;
+        if (url.split(".").pop() == "css") {
+            s = document.createElement("link");
+            s.type = "text/css";
+            s.rel = "stylesheet";
+            s.href = url
+        } else {
+            s = document.createElement("script");
+            s.type = "text/javascript";
+            s.src = url
+        }
+        if (s.readyState) { // IE
+            s.onreadystatechange = function () {
+                if (s.readyState == "loaded" || s.readyState == "complete") {
+                    s.onreadystatechange = null;
+                    if (callback) eval(callback)
+                }
+            }
+        } else {
+            s.onload = function () {
+                if (callback) eval(callback)
+            }
+        }
+        document.getElementsByTagName("head")[0].appendChild(s)
+    },
+
+    // Check if you're in eXe
+    isInExe: function () {
+        return typeof eXeLearning !== "undefined";
+    },
+
+    // Check if you're in preview
+    isPreview: function () {
+        return $('body').hasClass('preview');
+    },
+
+    // Export idevice path - To review
+    getIdeviceInstalledExportPath: function (ideviceType) {
+        let ideviceNode;
+        if (this.isInExe()) {
+            ideviceNode = $(`article.idevice_node[idevice-type="${ideviceType}"]`);
+            return ideviceNode.attr('idevice-path');
+        } else {
+            ideviceNode = $(`article.idevice_node[data-idevice-type="${ideviceType}"]`);
+            return ideviceNode.attr('data-idevice-path');
+        }
+    }
+
+};
+
+// iDevices common code - To review (Part of this code should not be exported)
+var $exeDevices = {
+    iDevice: {
+        // Gamification
+        gamification: {
+            initGame($game, nameGame, gameClass, ideviceClass) {
+                const $activities = $(`.${ideviceClass}`);
+
+                if ($(".QuizTestIdevice .iDevice").length > 0) {
+                    $game.hasSCORMbutton = true;
+                }
+                let scormFlow = false;
+                $game.isInExe = eXe.app.isInExe();
+                $game.idevicePath = $game.isInExe
+                    ? eXe.app.getIdeviceInstalledExportPath(gameClass)
+                    : $(".idevice_node." + gameClass).eq(0).attr("data-idevice-path");
+
+                $game.activities = $activities;
+                if ($game.activities.length === 0) return;
+                if (!$exeDevices.iDevice.gamification.helpers.supportedBrowser(nameGame)) return;
+
+                if ($("#exe-submitButton").length > 0) {
+                    $game.activities.hide();
+                    if (typeof _ !== "undefined") {
+                        $game.activities.before(`<p>${_(nameGame)}</p>`);
+                    }
+                    return;
+                }
+                if (!($('html').is('#exe-index'))) {
+                    $game.scormAPIwrapper = '../libs/SCORM_API_wrapper.js';
+                    $game.scormFunctions = '../libs/SCOFunctions.js';
+                }
+
+                function initScorm() {
+                    if (typeof scorm !== "undefined" && scorm.init()) {
+                        $game.mScorm = scorm;
+                        $game.userName = $exeDevices.iDevice.gamification.scorm.getUserName(scorm);
+                        $game.previousScore = $exeDevices.iDevice.gamification.scorm.getPreviousScore(scorm);
+                        if (typeof scorm.SetScoreMax === "function") {
+                            scorm.SetScoreMax(100);
+                            scorm.SetScoreMin(0);
+                        } else {
+                            scorm.set(scorm.version === '2004' ? 'cmi.score.max' : 'cmi.core.score.max', "100");
+                            scorm.set(scorm.version === '2004' ? 'cmi.score.min' : 'cmi.core.score.min', "0");
+                        }
+                    } else {
+                        console.warn("La inicialización SCORM devolvió false o scorm no está definido");
+                    }
+                }
+
+                function loadAndInitScorm() {
+                    if (typeof window.scorm === "undefined") {
+                        $.ajax({ url: $game.scormAPIwrapper, dataType: "script" })
+                            .then(() => $.ajax({ url: $game.scormFunctions, dataType: "script" }))
+                            .then(initScorm)
+                            .fail((_, textStatus) => {
+                                console.error("Error loading SCORM:", textStatus);
+                            })
+                            .always(() => {
+                                $game.enable();
+                            });
+                    } else {
+                        initScorm();
+                        $game.enable();
+                    }
+                }
+
+                try {
+                    if ($("body").hasClass("exe-scorm")) {
+                        scormFlow = true;
+                        loadAndInitScorm();
+                        return;
+                    }
+                } catch (err) {
+                    console.error("init() error:", err);
+                } finally {
+                    if (!scormFlow) {
+                        $game.enable();
+                    }
+                }
+            },
+
+            scorm: {
+                getUserName: function (scormgame) {
+                    if (scormgame && typeof scormgame.GetLearnerName === 'function') {
+                        return scormgame.GetLearnerName() || '';
+                    } else {
+                        return '';
+                    }
+                },
+
+                getPreviousScore: function (scormgame) {
+                    if (scormgame && typeof scormgame.GetScoreRaw === 'function') {
+                        return scormgame.GetScoreRaw() || '0';
+                    } else {
+                        return '0';
+                    }
+                },
+
+                /**
+                 * Opens the SCORM session for an iDevice and reads back what it
+                 * needs from it: the learner name, the score already stored for
+                 * this SCO, and the 0..100 bounds the LMS grades against.
+                 *
+                 * Deliberately does NOT gate on what init() returns. It answers
+                 * false when the session is already open, which inside a SCORM
+                 * package is the normal case — loadPage() opens it first — so
+                 * gating on it skipped the binding for exactly the sessions
+                 * that were working. Two iDevices grew that bug separately;
+                 * this is where the fix lives so a third cannot.
+                 *
+                 * @param {Object} scormgame The SCORM API wrapper.
+                 * @returns {Object} `{ userName, previousScore }`, defaulted
+                 *   when there is no session to read.
+                 */
+                bindSession: function (scormgame) {
+                    if (!scormgame) {
+                        return { userName: '', previousScore: '0' };
+                    }
+
+                    if (typeof scormgame.init === 'function') {
+                        scormgame.init();
+                    }
+
+                    if (typeof scormgame.SetScoreMax === 'function') {
+                        scormgame.SetScoreMax(100);
+                    } else if (typeof scormgame.set === 'function') {
+                        scormgame.set(scormgame.version === '2004' ? 'cmi.score.max' : 'cmi.core.score.max', '100');
+                    }
+
+                    if (typeof scormgame.SetScoreMin === 'function') {
+                        scormgame.SetScoreMin(0);
+                    } else if (typeof scormgame.set === 'function') {
+                        scormgame.set(scormgame.version === '2004' ? 'cmi.score.min' : 'cmi.core.score.min', '0');
+                    }
+
+                    return {
+                        userName: $exeDevices.iDevice.gamification.scorm.getUserName(scormgame),
+                        previousScore: $exeDevices.iDevice.gamification.scorm.getPreviousScore(scormgame),
+                    };
+                },
+
+                // Nueva función: Obtener puntuación de una actividad específica desde suspend_data
+                getActivityScore: function (ideviceNumber) {
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM) {
+                        return 0;
+                    }
+
+                    // Single owner of cmi.suspend_data: the SCORM 1.2 registry
+                    // when present, the legacy line format otherwise.
+                    const registry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                    const lmsData = registry
+                        ? $exeDevices.iDevice.gamification.scorm.buildLmsDataFromRegistry()
+                        : $exeDevices.iDevice.gamification.scorm.parseSuspendData(
+                              pipwerks.SCORM.get("cmi.suspend_data") || ""
+                          );
+
+                    if (lmsData[ideviceNumber]) {
+                        // Score está guardado en escala 0-1000, convertir a 0-10
+                        return (lmsData[ideviceNumber].score / 10) || 0;
+                    }
+
+                    return 0;
+                },
+
+                // Nueva función: Obtener puntuación total del nodo desde cmi.core.score.raw
+                getTotalScore: function () {
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM) {
+                        return 0;
+                    }
+
+                    const rawScore = pipwerks.SCORM.get(pipwerks.SCORM.version === '2004' ? 'cmi.score.raw' : 'cmi.core.score.raw');
+                    return parseFloat(rawScore) || 0;
+                },
+
+                /**
+                 * Documented no-op, kept because every game iDevice calls it
+                 * when the page is going away.
+                 *
+                 * SCORM session finalization is centralized: the SCORM 1.2
+                 * runtime ends the session exactly once from its own lifecycle
+                 * layer (pagehide), and older packages end it from
+                 * unloadPage(). An iDevice terminating the session on its own
+                 * would either close it while other iDevices are still writing
+                 * or attempt a second LMSFinish. Activity state and scores are
+                 * already written through sendScoreNew/updateActivity by the
+                 * time this runs, so there is nothing left to flush here.
+                 *
+                 * @param {Object} scormgame Unused; kept for the legacy signature.
+                 */
+                endScorm: function (scormgame) {
+                    // Intentionally empty — see the comment above.
+                },
+
+                /**
+                 * The central SCORM 1.2 activity registry, when the page
+                 * carries the SCORM 1.2 runtime (`libs/SCOFunctions.js`).
+                 * Absent in HTML5/EPUB exports and in SCORM 2004 packages,
+                 * which keep the legacy runtime.
+                 *
+                 * @returns {Object|null} The registry, or null.
+                 */
+                getActivityRegistry: function () {
+                    if (typeof window === 'undefined' || !window.exeScorm12) return null;
+                    return window.exeScorm12.activities || null;
+                },
+
+                /**
+                 * Report an iDevice to the central activity registry.
+                 *
+                 * Every flag is passed explicitly: `isScorm > 0` is how an
+                 * eXeLearning activity declares itself evaluable and required,
+                 * and `completed` is supplied by the caller. The registry
+                 * never infers policy from incidental game properties.
+                 *
+                 * @param {Object} game The iDevice options object.
+                 * @param {Object} [progress] Fields to merge (completed, answered, total, score).
+                 * @returns {Object|null} The stored record, or null when the
+                 * page has no SCORM 1.2 registry.
+                 */
+                reportActivity: function (game, progress) {
+                    const registry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                    if (!registry || typeof game !== 'object' || game === null || !game.ideviceId) return null;
+                    const evaluable = Number(game.isScorm) > 0;
+                    const weight = parseFloat(game.weighted);
+                    if (game.ideviceNumber) {
+                        // Page position of each registered id, so registry
+                        // records can be presented under the positional keys
+                        // the legacy display code uses (buildLmsDataFromRegistry).
+                        $exeDevices.iDevice.gamification.scorm._activityNumbersById[game.ideviceId] =
+                            game.ideviceNumber;
+                    }
+                    const registration = registry.register(
+                        game.ideviceId,
+                        Object.assign(
+                            {
+                                evaluable: evaluable,
+                                // A presentation or exploration iDevice is not
+                                // required: it must never hold the page at
+                                // "incomplete".
+                                completionRequired: evaluable,
+                                // No usable weight means 100, the same default
+                                // the editor writes into the form. It used to
+                                // be 1, and 28 of the 35 game iDevices never
+                                // default `weighted` when they load for
+                                // playback — so an activity that had never been
+                                // through the editor weighed a hundredth of one
+                                // that had, on the same page. Merely opening and
+                                // saving an iDevice re-weighted the page without
+                                // the author changing anything.
+                                weight: Number.isNaN(weight) || weight <= 0 ? 100 : weight,
+                                minimumScore: 0,
+                                maximumScore: 100,
+                                // This activity's own pass mark, the project's
+                                // unless its author customised it. The page is
+                                // judged by the weighted mean of these, so an
+                                // iDevice alone on its page passes in the LMS
+                                // exactly when it passes on screen.
+                                successThreshold: $exeDevices.iDevice.gamification.scorm.getSuccessThreshold(game),
+                            },
+                            progress || {}
+                        )
+                    );
+                    // A required activity registering after the policy already
+                    // wrote a terminal verdict means the page is demonstrably
+                    // not finished — let the policy correct its own verdict
+                    // (a restored one is never touched).
+                    const runtime = typeof window !== 'undefined' ? window.exeScorm12 : null;
+                    if (runtime && runtime.policy && typeof runtime.policy.reconcilePendingActivities === 'function') {
+                        runtime.policy.reconcilePendingActivities();
+                    }
+                    return registration;
+                },
+
+                /** Page position by activity id (see reportActivity). */
+                _activityNumbersById: {},
+
+                /**
+                 * Present the registry in the legacy lmsData shape
+                 * (`{ideviceNumber: {title, score, weighted}}`), so the
+                 * historical aggregate (getFinalScore) and the display helpers
+                 * keep a single source of score math. Only evaluable
+                 * activities enter, matching what the legacy format stored.
+                 *
+                 * @returns {Object} Legacy-shaped view of the registry.
+                 */
+                buildLmsDataFromRegistry: function () {
+                    const lmsData = {};
+                    const registry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                    if (!registry) return lmsData;
+                    const numbers = $exeDevices.iDevice.gamification.scorm._activityNumbersById;
+                    registry.list().forEach((record, position) => {
+                        if (!record.evaluable) return;
+                        const key = numbers[record.id] || position + 1;
+                        lmsData[key] = {
+                            title: '',
+                            score: record.score === null ? 0 : record.score,
+                            weighted: record.weight,
+                        };
+                    });
+                    return lmsData;
+                },
+
+                addButtonScoreNew: function (game, hasSCORMbutton, isInExe) {
+                    if (typeof game !== 'object' || game === null) return;
+
+                    let fB = '<div class="Games-BottonContainer d-flex align-items-center justify-content-end mx-auto p-0 w-100">';
+
+                    if (game.isScorm == 2) {
+                        const buttonText = game.textButtonScorm;
+                        if (buttonText != "") {
+                            fB += '<div class="Games-GetScore d-flex align-items-center justify-content-center w-100 mt-3">';
+                            fB += `<input type="button" value="${buttonText}" class="Games-SendScore btn btn-primary btn-sm mx-1 my-1" /> <span class="Games-RepeatActivity"></span>`;
+                            fB += '</div>';
+                        }
+                    } else if (game.isScorm == 1) {
+                        fB += `<div class="Games-GetScore d-flex align-items-center justify-content-center w-100 mt-3"><span class="Games-RepeatActivity"></span></div>`;
+                    }
+                    fB += '</div>';
+                    return fB;
+                },
+
+                parseJSONSafe: function (str) {
+                    try {
+                        return JSON.parse(str) || {};
+                    } catch (e) {
+                        console.error("parseJSONSafe: Could not parse JSON. Using empty object fallback.");
+                        return {};
+                    }
+                },
+
+                createScoreScormHtml: function (game) {
+                    let $exeScoreNode = $("#exeScoreNode");
+                    let initialScore = 0;
+                    
+                    if (typeof pipwerks !== 'undefined' && pipwerks.SCORM) {
+                        const rawScore = pipwerks.SCORM.get(pipwerks.SCORM.version === '2004' ? 'cmi.score.raw' : 'cmi.core.score.raw');
+                        if (rawScore && rawScore !== "" && rawScore !== "0") {
+                            initialScore = parseFloat(rawScore) || 0;
+                        } else {
+                            // Single owner of cmi.suspend_data: the SCORM 1.2
+                            // registry when present, the legacy line format
+                            // otherwise.
+                            const registry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                            if (registry) {
+                                initialScore = $exeDevices.iDevice.gamification.scorm.getFinalScore(
+                                    $exeDevices.iDevice.gamification.scorm.buildLmsDataFromRegistry()
+                                );
+                            } else {
+                                const suspendData = pipwerks.SCORM.get("cmi.suspend_data") || "";
+                                if (suspendData && suspendData.trim() !== "") {
+                                    const lmsData = $exeDevices.iDevice.gamification.scorm.parseSuspendData(suspendData);
+                                    initialScore = $exeDevices.iDevice.gamification.scorm.getFinalScore(lmsData);
+                                }
+                            }
+                        }
+                    }
+
+                    // The page's minimum score sits before the score itself, on
+                    // the same 0-100 scale; showPagePassScore() fills it in.
+                    const passScoreLabelHtml =
+                        '<div id="eXeScoreNodePassScore" class="border border-success text-success d-inline-block px-2 py-1 me-2 d-none"></div>';
+
+                    if ($exeScoreNode.length === 0) {
+                        const newScoreNodeHtml = `
+                                    <div id="exeScoreNode" class="text-end p-2">
+                                        ${passScoreLabelHtml}
+                                        <div id="eXeScoreNodeScore" class="bg-success text-white d-inline-block px-2 py-1">
+                                            ${game.msgs.msgYouScore}: ${initialScore}/100
+                                        </div>
+                                    </div>
+                                `;
+
+                        let $page = $(".page-content");
+                        if ($page.length === 0) {
+                            $page = $("#node-content");
+                        }
+                        $("#exeScoreNode").remove();
+
+                        if ($page.length > 0) {
+                            $page.prepend(newScoreNodeHtml);
+                        }
+                    } else {
+                        $("#eXeScoreNodeScore").text(`${game.msgs.msgYouScore}: ${initialScore}/100`);
+                        if ($("#eXeScoreNodePassScore").length === 0) {
+                            $("#eXeScoreNodeScore").before(passScoreLabelHtml);
+                        }
+                    }
+                    $exeDevices.iDevice.gamification.scorm.showPagePassScore();
+                },
+
+                updateScormNew: function (game, lmsData) {
+                    let previouScore = '';
+
+                    if (lmsData && typeof pipwerks !== 'undefined' && pipwerks.SCORM) {
+                        const scoreVal = parseFloat(lmsData[game.ideviceNumber]?.score);
+                        previouScore = !Number.isNaN(scoreVal) ? (scoreVal / 10).toFixed(2) : '';
+                        $exeDevices.iDevice.gamification.scorm.showFinalScore(lmsData, game);
+                    }
+                    const $gmain = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0);
+
+                    const $sendScore = $gmain.closest('article').find(".Games-SendScore"),
+                        $repeatActivity = $gmain.closest('article').find(".Games-RepeatActivity");
+                    // Every activity may be replayed. The four-way chains this
+                    // used to carry branched on `repeatActivity` too, but the
+                    // line below sets it unconditionally, so the two "you may
+                    // only do this once" arms were unreachable from here — and
+                    // from nowhere else, because this is the only place that
+                    // builds the text. What is left is the same partition the
+                    // live arms already made: whether the LMS handed back a
+                    // score from a previous visit.
+                    //
+                    // Their strings stay in every iDevice's msgsdefault and in
+                    // translations/, untouched: dropping the unreachable code
+                    // is not a decision to retire the "only once" option, and
+                    // restoring it must not mean translating them again.
+                    game.repeatActivity = true;
+                    let text = '';
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM) {
+                        text = game.msgs.msgScoreScorm;
+                    } else if (game.isScorm === 1) {
+                        text = previouScore !== ''
+                            ? game.msgs.msgYouLastScore + ': ' + previouScore
+                            : game.msgs.msgSaveAuto + ' ' + game.msgs.msgPlaySeveralTimes;
+                    } else if (game.isScorm === 2) {
+                        $sendScore.show();
+                        text = previouScore !== ''
+                            ? game.msgs.msgYouLastScore + ': ' + previouScore
+                            : game.msgs.msgSeveralScore;
+                    }
+                    $repeatActivity.text(text).fadeIn();
+                },
+
+                getFinalScore: function (lmsData) {
+                    // Single aggregation algorithm: when the SCORM 1.2
+                    // registry is present, its summary() owns the weighting,
+                    // so the displayed score, cmi.core.score.raw and the
+                    // completion policy always read the same number. The local
+                    // implementation below serves only the legacy runtimes
+                    // (SCORM 2004 and pre-rewrite packages), which have no
+                    // registry, and must stay arithmetically identical to
+                    // aggregateScore() in exe-scorm12-activities.js.
+                    //
+                    // Both used to scale the weights to integers summing to
+                    // exactly 100 by largest-remainder rounding. That made the
+                    // page's mark depend on the order the author placed the
+                    // iDevices in: the scaling leaves one point over, it goes
+                    // to the largest fraction, and with equal weights every
+                    // fraction ties — so a stable sort handed it to whichever
+                    // activity came first, multiplying that one activity's
+                    // score. Three equally weighted activities scoring
+                    // 100/50/0 aggregated to 50.5, and the same three as
+                    // 0/50/100 to 49.5: same work by the learner, opposite
+                    // verdict against a mastery score of 50. A weighted mean
+                    // is symmetric, so it cannot.
+                    const scoreRegistry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                    if (scoreRegistry) {
+                        const aggregate = scoreRegistry.summary().score;
+                        return aggregate === null ? 0 : aggregate;
+                    }
+                    if (!lmsData) {
+                        return 0;
+                    }
+
+                    const keys = Object.keys(lmsData);
+                    if (keys.length === 0) {
+                        return 0;
+                    }
+
+                    let sumWeights = 0;
+                    let sumWeighted = 0;
+                    keys.forEach(key => {
+                        const activity = lmsData[key] || {};
+                        const score = Math.max(0, Math.min(parseFloat(activity.score) || 0, 100));
+                        const weight = $exeDevices.iDevice.gamification.scorm.getLegacyWeight(activity);
+                        sumWeighted += score * weight;
+                        sumWeights += weight;
+                    });
+
+                    // getLegacyWeight() is at least 1, so the sum of one or
+                    // more weights is never zero.
+                    return Math.round((sumWeighted / sumWeights) * 100) / 100;
+                },
+
+                /**
+                 * The weight of one legacy suspend_data entry, clamped into
+                 * 1-100. Same rule as reportActivity: no usable weight is 100,
+                 * not 1. The aggregations must stay arithmetically identical
+                 * to the registry's, so their defaults cannot differ either.
+                 *
+                 * @param {Object} activity A parseSuspendData() entry.
+                 * @returns {number} A weight in 1-100.
+                 */
+                getLegacyWeight: function (activity) {
+                    const storedWeight = parseFloat(activity.weighted);
+                    const weight = Number.isNaN(storedWeight) || storedWeight <= 0 ? 100 : storedWeight;
+                    return Math.max(1, Math.min(weight, 100));
+                },
+
+                /**
+                 * One activity's pass mark on the 0-100 scale its score is
+                 * reported on: the project's, or its own when its author
+                 * customised it.
+                 *
+                 * @param {Object} game The iDevice options object.
+                 * @returns {number} A percentage in 0-100.
+                 */
+                getSuccessThreshold: function (game) {
+                    return $exe.passScore.toPercent($exe.passScore.resolve(game));
+                },
+
+                /** Pass mark by page position, for the legacy runtimes (see getFinalThreshold). */
+                _successThresholdsByNumber: {},
+
+                /**
+                 * The page's pass mark for the runtimes that have no registry
+                 * (SCORM 2004): the weighted mean of the activities' own marks,
+                 * over the same entries and with the same weights as
+                 * getFinalScore(), so it must stay arithmetically identical to
+                 * aggregateSuccessThreshold() in exe-scorm12-activities.js. An
+                 * entry whose activity has not registered on this page load
+                 * counts at the project's mark.
+                 *
+                 * @param {Object} lmsData Activities by page position.
+                 * @returns {number} A percentage in 0-100.
+                 */
+                getFinalThreshold: function (lmsData) {
+                    const pageThreshold = $exe.passScore.toPercent();
+                    const keys = lmsData ? Object.keys(lmsData) : [];
+                    if (keys.length === 0) {
+                        return pageThreshold;
+                    }
+                    const thresholds = $exeDevices.iDevice.gamification.scorm._successThresholdsByNumber;
+
+                    let sumWeights = 0;
+                    let sumWeighted = 0;
+                    keys.forEach(key => {
+                        const own = thresholds[key];
+                        const threshold = typeof own === 'number' ? own : pageThreshold;
+                        const weight = $exeDevices.iDevice.gamification.scorm.getLegacyWeight(lmsData[key] || {});
+                        sumWeighted += threshold * weight;
+                        sumWeights += weight;
+                    });
+
+                    return Math.round((sumWeighted / sumWeights) * 100) / 100;
+                },
+
+                /**
+                 * Progress of an activity in the legacy suspend_data, stored
+                 * in its `state`: registered with no score yet, scored but not
+                 * finished, or finished (see convertToLineFormat).
+                 */
+                ACTIVITY_PENDING: 0,
+                ACTIVITY_SCORED: 1,
+                ACTIVITY_FINISHED: 2,
+
+                /**
+                 * An entry's progress. Entries written before the state was
+                 * stored have none: a positive score shows the activity was
+                 * played, so it counts as finished, while a 0 cannot be told
+                 * apart from the one registerActivity() seeds and stays pending.
+                 *
+                 * @param {Object} [entry] One activity of the parsed suspend_data.
+                 * @returns {number} One of the ACTIVITY_* states.
+                 */
+                getActivityState: function (entry) {
+                    const scorm = $exeDevices.iDevice.gamification.scorm;
+                    if (!entry) return scorm.ACTIVITY_PENDING;
+                    if ([scorm.ACTIVITY_PENDING, scorm.ACTIVITY_SCORED, scorm.ACTIVITY_FINISHED].includes(entry.state)) {
+                        return entry.state;
+                    }
+                    return parseFloat(entry.score) > 0 ? scorm.ACTIVITY_FINISHED : scorm.ACTIVITY_PENDING;
+                },
+
+                /**
+                 * The page's status for the runtimes that have no registry
+                 * (SCORM 2004), keeping apart the three things the SCORM 1.2
+                 * policy keeps apart: whether there is a score, whether the
+                 * activities are finished, and whether the page is passed.
+                 *
+                 * The page is incomplete while an activity has not finished,
+                 * whatever its score, so a page opened and left is not reported
+                 * as completed. Once all of them have, it is passed by the
+                 * weighted mean of decision 3 of ADR-2316-01, or, when the
+                 * author requires it, only if every activity reaches its own
+                 * mark: the same comparison as unmetThresholds() in the
+                 * registry, rounded to two decimals. A threshold the LMS
+                 * publishes (getLmsPassingScore) judges the page's score
+                 * instead, under either rule.
+                 *
+                 * The activities judged are the ones registered on this page
+                 * load, plus any entry that carries a state: the runtime only
+                 * writes one for an activity it tracks, so it is pending work
+                 * whose iDevice has not registered yet. A stateless entry that
+                 * did not register is a leftover from an older runtime, which
+                 * seeded every registered iDevice, and does not hold the page
+                 * back. An activity cannot report without registering: its page
+                 * position comes from registerActivity(). Until every activity
+                 * has registered, one still missing counts at the project's
+                 * mark (getFinalThreshold), so the verdict is provisional while
+                 * the page loads; ADR-2316-01 accepts that risk.
+                 *
+                 * @param {Object} lmsData Activities by page position.
+                 * @returns {{completion: string, success: string, scored: boolean}|null}
+                 *   The SCORM 2004 completion and success statuses, and whether
+                 *   any activity has a score to publish; null with no activities.
+                 */
+                getLegacyVerdict: function (lmsData) {
+                    const scorm = $exeDevices.iDevice.gamification.scorm;
+                    const data = lmsData || {};
+                    const thresholds = scorm._successThresholdsByNumber;
+                    const numbers = Object.keys(thresholds);
+                    Object.keys(data).forEach(key => {
+                        if (numbers.indexOf(key) === -1 && typeof data[key].state === 'number') numbers.push(key);
+                    });
+                    if (numbers.length === 0) {
+                        return null;
+                    }
+                    const scored = Object.keys(data).some(key => scorm.getActivityState(data[key]) !== scorm.ACTIVITY_PENDING);
+                    if (numbers.some(key => scorm.getActivityState(data[key]) !== scorm.ACTIVITY_FINISHED)) {
+                        return { completion: 'incomplete', success: 'unknown', scored: scored };
+                    }
+                    let passed;
+                    const lmsThreshold = scorm.getLmsPassingScore();
+                    if (lmsThreshold !== null) {
+                        // The LMS wins, as mastery_score does in SCORM 1.2:
+                        // its threshold is for the page's score.
+                        passed = scorm.getFinalScore(data) >= lmsThreshold;
+                    } else if ($exe.passScore.requiresEveryActivity()) {
+                        const pageThreshold = $exe.passScore.toPercent();
+                        passed = numbers.every(key => {
+                            const score = Math.max(0, Math.min(parseFloat(data[key].score) || 0, 100));
+                            const own = thresholds[key];
+                            const threshold = typeof own === 'number' ? own : pageThreshold;
+                            return Math.round(score * 100) / 100 >= Math.round(threshold * 100) / 100;
+                        });
+                    } else {
+                        passed = scorm.getFinalScore(data) >= scorm.getFinalThreshold(data);
+                    }
+                    return { completion: 'completed', success: passed ? 'passed' : 'failed', scored: scored };
+                },
+
+                /**
+                 * Write a getLegacyVerdict() result with the connected LMS's
+                 * data model. SCORM 1.2 has a single element for both.
+                 *
+                 * @param {{completion: string, success: string}} verdict
+                 */
+                setLegacyStatus: function (verdict) {
+                    if (pipwerks.SCORM.version === '2004') {
+                        pipwerks.SCORM.set('cmi.completion_status', verdict.completion);
+                        pipwerks.SCORM.set('cmi.success_status', verdict.success);
+                    } else {
+                        pipwerks.SCORM.set(
+                            'cmi.core.lesson_status',
+                            verdict.completion === 'incomplete' ? 'incomplete' : verdict.success
+                        );
+                    }
+                },
+
+                /**
+                 * The pass mark the LMS sets for this SCO on the legacy path:
+                 * SCORM 2004's cmi.scaled_passing_score (-1 to 1), as a
+                 * percentage. The SCORM 1.2 runtime reads mastery_score in its
+                 * own policy.
+                 *
+                 * cmi.score.scaled is not written alongside, on purpose: with
+                 * both set, the LMS works out success_status by itself when the
+                 * session ends, and would mark failed a page still incomplete.
+                 * The verdict here compares the same score with the same mark.
+                 *
+                 * @returns {number|null} A percentage in 0-100, or null when the
+                 *   LMS sets none.
+                 */
+                getLmsPassingScore: function () {
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM || pipwerks.SCORM.version !== '2004') {
+                        return null;
+                    }
+                    let value;
+                    try {
+                        value = pipwerks.SCORM.get('cmi.scaled_passing_score');
+                    } catch (e) {
+                        return null;
+                    }
+                    if (value === null || value === undefined || String(value).trim() === '') return null;
+                    const scaled = parseFloat(value);
+                    if (!Number.isFinite(scaled) || scaled < -1 || scaled > 1) return null;
+                    // Every decimal the element can hold (real(10,7), so five
+                    // as a percentage) is kept: rounding it to two would let a
+                    // score of 45 pass a mark of 45.004. Rounding at that
+                    // precision only drops floating-point noise (0.56 * 100).
+                    return Math.round(Math.max(0, scaled) * 1e7) / 1e5;
+                },
+
+                /**
+                 * How the page is passed, for the label beside its score: every
+                 * activity at its own mark, or the page's score against a
+                 * threshold. It asks whatever decides the status, so the two
+                 * agree: the SCORM 1.2 policy, or getLegacyVerdict().
+                 *
+                 * @param {Object} [lmsData] Activities by page position (legacy
+                 *   path); read from cmi.suspend_data when not given.
+                 * @returns {{everyActivity: boolean, threshold: number|null}|null}
+                 *   The threshold is a percentage in 0-100; null when nothing
+                 *   decides a pass here.
+                 */
+                getPagePassRule: function (lmsData) {
+                    const scorm = $exeDevices.iDevice.gamification.scorm;
+                    const runtime = typeof window !== 'undefined' ? window.exeScorm12 : null;
+                    const policy = runtime && runtime.policy;
+                    if (policy && typeof policy.setScoreDetailed === 'function') {
+                        if (typeof policy.getPassRule === 'function') return policy.getPassRule();
+                        // A host runtime from before getPassRule().
+                        if (typeof policy.getSuccessThreshold === 'function') {
+                            return { everyActivity: false, threshold: policy.getSuccessThreshold() };
+                        }
+                        return null;
+                    }
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM) return null;
+                    const lmsThreshold = scorm.getLmsPassingScore();
+                    if (lmsThreshold !== null) return { everyActivity: false, threshold: lmsThreshold };
+                    if ($exe.passScore.requiresEveryActivity()) return { everyActivity: true, threshold: null };
+                    const data = lmsData || scorm.parseSuspendData(pipwerks.SCORM.get('cmi.suspend_data') || '');
+                    return { everyActivity: false, threshold: scorm.getFinalThreshold(data) };
+                },
+
+                /**
+                 * Write the page's minimum score into the label beside its
+                 * score (createScoreScormHtml), on the same 0-100 scale, or say
+                 * that each activity must reach its own. Hidden when nothing
+                 * decides a pass, or when the page carries no text for it
+                 * ($exe_i18n, as the iDevices' own notice).
+                 *
+                 * @param {Object} [lmsData] See getPagePassRule().
+                 */
+                showPagePassScore: function (lmsData) {
+                    const $label = $('#eXeScoreNodePassScore');
+                    if ($label.length === 0) return;
+                    const rule = $exeDevices.iDevice.gamification.scorm.getPagePassRule(lmsData);
+                    const i18n = typeof $exe_i18n !== 'undefined' && $exe_i18n ? $exe_i18n : {};
+                    let text = '';
+                    if (rule && rule.everyActivity) {
+                        text = i18n.pagePassEveryActivity || '';
+                    } else if (rule && typeof rule.threshold === 'number' && Number.isFinite(rule.threshold)) {
+                        // Scores are kept to two decimals, so the lowest one
+                        // that passes is the threshold rounded up, never down:
+                        // 45.000001 shows as 45.01, not as a 45 that fails.
+                        // Compare a candidate with the full threshold instead
+                        // of truncating its decimals. The comparison also
+                        // absorbs floating-point noise in the scaling: 0.07 *
+                        // 100 is 7.000000000000001, which a plain ceil would
+                        // show as 0.08.
+                        const hundredths = Math.floor(rule.threshold * 100);
+                        const candidate = hundredths / 100;
+                        const minimum = candidate >= rule.threshold ? candidate : (hundredths + 1) / 100;
+                        text = (i18n.pagePassScore || '').replace('%s', `${minimum}/100`);
+                    }
+                    $label.text(text).toggleClass('d-none', text === '');
+                },
+
+                registerActivity: function (game) {
+                    if (typeof game !== 'object' || game === null) return;
+
+                    // Resolve the iDevice identity from the DOM once. SCORM tracking
+                    // and the progress report both read it, so it must run in every
+                    // export format, not only under SCORM.
+                    game.mainElement = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0);
+                    let $ideviceNode = game.mainElement.closest('.idevice_node');
+                    // The node id equals the stable odeIdeviceId.
+                    game.ideviceId = $ideviceNode.attr('id');
+                    game.title = (game.mainElement.closest('article')
+                        .find('header .box-title').text() || '').replace(/"/g, ' ');
+                    game.ideviceNumber = $('.idevice_node').index($ideviceNode) + 1;
+
+                    // Declare the activity to the central registry (SCORM 1.2
+                    // packages only) before any score is reported, so the
+                    // completion policy knows the page's shape from the start.
+                    // The legacy suspend_data format identified activities by
+                    // page position; passing the position lets the registry
+                    // claim a migrated record for this activity.
+                    $exeDevices.iDevice.gamification.scorm.reportActivity(game, {
+                        total: parseFloat(game.numberQuestions) || 0,
+                        legacyIndex: game.ideviceNumber,
+                    });
+
+                    let lmsData = {};
+                    if (typeof pipwerks !== 'undefined' && pipwerks.SCORM) {
+                        $exeDevices.iDevice.gamification.scorm.createScoreScormHtml(game);
+
+                        const registry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                        if (registry) {
+                            // SCORM 1.2 runtime: the registry is the single
+                            // owner of cmi.suspend_data (restored by the entry
+                            // policy, persisted by the lifecycle layer) — this
+                            // helper no longer reads or writes it directly.
+                            lmsData = $exeDevices.iDevice.gamification.scorm.buildLmsDataFromRegistry();
+                            const record = registry.get(game.ideviceId);
+                            if (record && record.score !== null) {
+                                game.previousScore = (record.score / 10).toFixed(2);
+                                const totalScore = $exeDevices.iDevice.gamification.scorm.getFinalScore(lmsData);
+                                if (totalScore > 0) {
+                                    $("#eXeScoreNodeScore").text(`${game.msgs.msgYouScore}: ${totalScore}/100`);
+                                }
+                            }
+                        } else {
+                            // Legacy runtime (SCORM 2004 packages and packages
+                            // exported before the SCORM 1.2 runtime rewrite).
+                            // Its suspend_data identifies activities by page
+                            // position, so that is how getFinalThreshold()
+                            // finds this activity's mark. Only an activity
+                            // that sends a score is tracked, as the registry
+                            // tracks only evaluable ones: another would keep
+                            // the page pending for ever (getLegacyVerdict).
+                            const evaluable = Number(game.isScorm) > 0;
+                            if (evaluable) {
+                                $exeDevices.iDevice.gamification.scorm._successThresholdsByNumber[game.ideviceNumber] =
+                                    $exeDevices.iDevice.gamification.scorm.getSuccessThreshold(game);
+                            }
+                            let suspendData = pipwerks.SCORM.get("cmi.suspend_data") || "";
+
+                            lmsData = $exeDevices.iDevice.gamification.scorm.parseSuspendData(suspendData);
+
+                            if (lmsData[game.ideviceNumber]) {
+                                game.previousScore = (lmsData[game.ideviceNumber].score / 10).toFixed(2);
+                                // Actualizar el score node con la puntuación recuperada
+                                const totalScore = $exeDevices.iDevice.gamification.scorm.getFinalScore(lmsData);
+                                if (totalScore > 0) {
+                                    $("#eXeScoreNodeScore").text(`${game.msgs.msgYouScore}: ${totalScore}/100`);
+                                }
+                            } else if (evaluable) {
+                                lmsData[game.ideviceNumber] = {
+                                    title: game.title,
+                                    score: 0,
+                                    weighted: game.weighted,
+                                    state: $exeDevices.iDevice.gamification.scorm.ACTIVITY_PENDING
+                                };
+
+                                const newFormatData = $exeDevices.iDevice.gamification.scorm.convertToLineFormat(lmsData, game);
+                                pipwerks.SCORM.set("cmi.suspend_data", newFormatData);
+                            }
+                        }
+                    }
+
+                    $exeDevices.iDevice.gamification.scorm.updateScormNew(game, lmsData);
+                },
+
+                convertToLineFormat: function (obj, game) {
+                    const lines = Object.keys(obj).map(key => {
+                        const item = obj[key];
+                        const num = parseInt(key, 10);
+                        const title = item.title || "";
+                        const score = item.score != null ? item.score : 0;
+                        const weight = item.weighted ?? 0;
+                        const msgScore = game.msgs.msgScore ?? "Puntuación";
+                        const msgWeight = game.msgs.msgWeight ?? "Peso";
+
+                        return `${num}. "${title}"; ${msgScore}: ${score}%; ${msgWeight}: ${weight}%`;
+                    });
+                    // A separate, versioned line leaves every score line readable
+                    // by older runtimes, whose parser ignores unknown lines. An
+                    // entry without a state keeps none: rewriting an old
+                    // payload must not make up its history (getActivityState).
+                    const states = Object.keys(obj).filter(key => typeof obj[key].state === 'number')
+                        .map(key => `${parseInt(key, 10)}=${obj[key].state}`);
+                    if (states.length) lines.push(`exe-state/1:${states.join(',')}`);
+                    return lines.join('.\t');
+                },
+
+                parseActivity: function (line) {
+                    const regex = /^(\d+)\.\s"(.*?)";\s[^:]+:\s([\d.]+)%;\s[^:]+:\s([\d.]+)%\.?$/;
+
+                    const match = line.match(regex);
+
+                    if (match) {
+                        const [_, strIndex, title, score, weighted] = match;
+
+                        return {
+                            index: parseInt(strIndex, 10),
+                            title: title.trim(),
+                            score: parseFloat(score),
+                            weighted: parseFloat(weighted)
+                        }
+                    }
+
+                    return null;
+                },
+
+                parseSuspendData: function (data) {
+                    let obj = {};
+
+                    if (!data) return obj;
+
+                    const lines = data.split('.\t');
+                    lines.forEach(line => {
+                        line = line.trim();
+                        if (!line) return;
+
+                        const activityData = $exeDevices.iDevice.gamification.scorm.parseActivity(line);
+
+                        if (activityData) {
+                            const { index, title, score, weighted } = activityData;
+                            obj[index] = {
+                                title: title.trim(),
+                                score: parseFloat(score),
+                                weighted: parseFloat(weighted)
+                            };
+                        }
+                    });
+
+                    lines.forEach(line => {
+                        const match = /^exe-state\/1:([\d=,]+)$/.exec(line.trim());
+                        if (!match) return;
+                        match[1].split(',').forEach(item => {
+                            const entry = /^(\d+)=([0-2])$/.exec(item);
+                            if (entry && obj[entry[1]]) obj[entry[1]].state = parseInt(entry[2], 10);
+                        });
+                    });
+
+                    return obj;
+                },
+
+                /**
+                 * Whether an activity publishes its progress by itself.
+                 *
+                 * Only automatic mode (isScorm 1) does. In manual mode the
+                 * learner owns the save button and decides when — if ever —
+                 * their grade is written, so nothing the activity reports on
+                 * its own may reach the LMS.
+                 *
+                 * Every SCORM-capable iDevice offers the three modes, so there
+                 * is nothing to except: a stored 2 always has a button behind
+                 * it. form, trueorfalse, scrambled-list and complete were the
+                 * four that hid the option and shipped a button that was
+                 * missing, dead or hidden; they behave like the rest now.
+                 *
+                 * @param {Object} game The iDevice options object.
+                 * @returns {boolean} true when the activity reports on its own.
+                 */
+                reportsAutomatically: function (game) {
+                    if (typeof game !== 'object' || game === null) return false;
+                    return Number(game.isScorm) === 1;
+                },
+
+                sendScoreNew: function (auto, game) {
+                    if (typeof game !== 'object' || game === null) {
+                        return;
+                    }
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM) {
+                        return;
+                    }
+                    // One guard for every iDevice, instead of the same
+                    // condition repeated at each of the hundred-odd places an
+                    // activity reports its progress — where it was easy to
+                    // forget one, and where forgetting it meant a manual-mode
+                    // activity quietly grading the learner behind the button.
+                    // A hand-sent score is never dropped: it came from the
+                    // button, which only exists in manual mode.
+                    if (auto === true && !$exeDevices.iDevice.gamification.scorm.reportsAutomatically(game)) {
+                        return;
+                    }
+                    const $gmain = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0);
+                    const $article = $gmain.closest('.idevice_node').eq(0);
+                    const $sendScore = $article.find(".Games-SendScore");
+                    const $repeatActivity = $article.find(".Games-RepeatActivity");
+
+                    let message = '';
+                    if (game.gameStarted || game.gameOver) {
+                        game.repeatActivity = true;
+                        // Explicit completion signal for the activity registry:
+                        // the activity is finished when, and only when, it says
+                        // it is. No button finishes anything.
+                        //
+                        // This used to read `gameOver === true || auto !== true`,
+                        // counting any hand-sent score as completion. The save
+                        // button is not a hand-in: it exists so the learner
+                        // decides when their grade is written, if ever, and
+                        // pressing it mid-game published a terminal state for an
+                        // activity still being played — and republished it on
+                        // every further press, which is what made the LMS
+                        // re-evaluate a verdict it had already reached.
+                        //
+                        // The learner who presses it before starting is told to
+                        // start first: that is the else branch below, which
+                        // reports nothing at all.
+                        const activityCompleted = game.gameOver === true;
+                        // Single owner of cmi.suspend_data: the registry when
+                        // the SCORM 1.2 runtime is present, the legacy line
+                        // format otherwise.
+                        const scormRegistry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                        const lmsData = scormRegistry
+                            ? $exeDevices.iDevice.gamification.scorm.buildLmsDataFromRegistry()
+                            : $exeDevices.iDevice.gamification.scorm.parseSuspendData(
+                                  pipwerks.SCORM.get("cmi.suspend_data") || ""
+                              );
+                        // The restored score used to feed the "you may only save
+                        // once" arm below, which could never be taken. lmsData
+                        // is still needed: updateActivity carries it.
+
+                        // Number.isFinite, not !isNaN: an iDevice computes its
+                        // mark as hits over a total it reads from its own data,
+                        // and a total of zero — an activity saved with no
+                        // questions, a deck that failed to load — makes that
+                        // division Infinity. isNaN lets Infinity through, and
+                        // it travelled into the registry and out to
+                        // cmi.core.score.raw as the learner's grade.
+                        const scoreNumber = parseFloat(game.scorerp);
+                        const formattedScore = Number.isFinite(scoreNumber) ? scoreNumber.toFixed(2) : '0';
+                        game.scorerp = formattedScore;
+
+                        // Read across updateActivity, which is what writes the
+                        // status. A report that moves it is the one whose icon
+                        // the learner is waiting on, and it gets a second,
+                        // later retry (see triggerMoodleDetection).
+                        const statusBefore =
+                            $exeDevices.iDevice.gamification.scorm.readLessonStatus();
+
+                        if (!auto) {
+                            // No "you may only save once" arm, and no hiding of
+                            // the send button: both branched on
+                            // `repeatActivity`, which the line above sets
+                            // unconditionally, so neither could ever be taken.
+                            // A manual submit always reports, and the button
+                            // stays available for the next one. msgOnlySaveScore
+                            // keeps its string and its translations.
+                            $sendScore.show();
+                            game.previousScore = formattedScore;
+                            $exeDevices.iDevice.gamification.scorm.updateActivity(game, lmsData, activityCompleted);
+
+                            message = game.userName !== ''
+                                ? (game.userName + '. ' + game.msgs.msgYouScore + ': ' + formattedScore)
+                                : (game.msgs.msgYouScore + ': ' + formattedScore);
+
+                            $repeatActivity.text(game.msgs.msgYouScore + ': ' + formattedScore).show();
+                        } else {
+                            game.previousScore = formattedScore;
+                            $exeDevices.iDevice.gamification.scorm.updateActivity(game, lmsData, activityCompleted);
+                            message = game.msgs.msgYouScore + ': ' + formattedScore;
+                            $repeatActivity.text(message).show();
+                        }
+
+                        // updateActivity committed synchronously above; this
+                        // schedules the deferred retry that carries whatever
+                        // settles after it. See triggerMoodleDetection.
+                        const statusAfter =
+                            $exeDevices.iDevice.gamification.scorm.readLessonStatus();
+                        $exeDevices.iDevice.gamification.scorm.triggerMoodleDetection(
+                            statusBefore !== statusAfter
+                        );
+
+                    } else {
+                        message = game.msgs.msgEndGameScore;
+                    }
+
+                    $repeatActivity.text(message).show();
+                    if (!auto && message) {
+                        alert(message);
+                    }
+
+                },
+
+                /**
+                 * Record an activity's score.
+                 *
+                 * @param {Object} game The iDevice options object.
+                 * @param {Object} lmsData Parsed suspend_data keyed by activity index.
+                 * @param {boolean} [completed] Whether the learner finished the
+                 * activity. Supplied explicitly by the caller — the completion
+                 * policy never infers it from a game property.
+                 */
+                /**
+                 * Persist the session (LMSCommit), through the SCORM 1.2
+                 * runtime when it is present and the vendored wrapper
+                 * otherwise.
+                 *
+                 * Branches on the capability, not on the runtime object, for
+                 * the same reason showFinalScore does: the Moodle plugin
+                 * injects its own vendored copy of the runtime, which may come
+                 * from a different release. isActive() is checked first —
+                 * iDevices register on jQuery ready, before loadPage(), and
+                 * commit() warns when there is no session.
+                 */
+                commitSession: function () {
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM) return;
+                    const runtime = typeof window !== 'undefined' ? window.exeScorm12 : null;
+                    if (
+                        runtime &&
+                        runtime.client &&
+                        typeof runtime.client.commit === 'function' &&
+                        typeof runtime.client.isActive === 'function' &&
+                        runtime.client.isActive()
+                    ) {
+                        runtime.client.commit();
+                        return;
+                    }
+                    if (typeof pipwerks.SCORM.save === 'function') {
+                        pipwerks.SCORM.save();
+                    }
+                },
+
+                /**
+                 * Deferred retry commit, so a value written just as the
+                 * interface settles still reaches the LMS — and so Moodle
+                 * redraws its course-structure menu from stored data.
+                 *
+                 * Moodle redraws the SCO status only on LMSCommit — it does not
+                 * observe the DOM inside the SCO's iframe, so nudging the markup
+                 * is a no-op for detection. updateActivity already commits
+                 * synchronously, and that remains the guarantee: a
+                 * deferred-only commit would be lost if the learner navigates
+                 * within the delay. This covers the writes that land after that
+                 * commit — a status settled by a timer or an animation — which
+                 * an activity reporting once, from a check button, has no later
+                 * report to carry for it.
+                 *
+                 * It also carries the menu refresh, which the synchronous
+                 * commit cannot. Moodle picks the transport for a commit in
+                 * useBeaconAPI(), nested inside DoRequest() in
+                 * mod/scorm/request.js (MOODLE_405_STABLE, identical in
+                 * MOODLE_500_STABLE):
+                 *
+                 *     if (window.event && ['beforeunload', 'unload', 'pagehide']
+                 *             .indexOf(window.event.type)) {
+                 *         window.mod_scorm_useBeaconAPI = true;
+                 *     }
+                 *
+                 * The comparison is missing its `!== -1`: indexOf answers -1 for
+                 * any event type NOT in that list, and -1 is truthy, so the test
+                 * is inverted — a `click` turns the flag on while `beforeunload`
+                 * (index 0, falsy) does not. Every commit an iDevice issues runs
+                 * inside a click handler, so from the learner's first answer
+                 * Moodle sends commits through navigator.sendBeacon: the data
+                 * POST does not block, and the TOC refresh LMSCommit fires
+                 * straight afterwards (a GET to prereqs.php) overtakes it and
+                 * redraws the course-structure menu from the pre-commit state.
+                 *
+                 * This retry is what puts the icon right, and it needs nothing
+                 * but time: LMSCommit fires that refresh whatever the transport,
+                 * and this commit carries no data of its own — CollectData
+                 * advanced `defaultvalue` during the first one, so its
+                 * datastring is empty. What is wanted is the refresh behind it,
+                 * reading a server that has by then received the first beacon.
+                 *
+                 * The delay is therefore a margin, not a guarantee. Measured
+                 * against a live Moodle: beacon 337-877 ms, TOC refresh
+                 * 224-572 ms. At the 50 ms this used to carry it always redrew
+                 * the old status. A beacon slower than the delay leaves the icon
+                 * as it is today, and LMSFinish refreshes the menu again on the
+                 * way out — the retry can never make things worse.
+                 */
+                moodleDetectionDelay: 1200,
+
+                /**
+                 * Second, later attempt, for the report that moves the status.
+                 *
+                 * Every report gets the 1200 ms retry above, and that margin is
+                 * usually enough. When it is not, an intermediate score simply
+                 * shows stale in the menu until the next answer commits again —
+                 * a self-correcting miss. The report that turns the page
+                 * passed or failed has no next answer behind it: if its refresh
+                 * loses the race, the icon stays wrong for the rest of the
+                 * visit. That one is worth a second look, far enough out to
+                 * clear a beacon that was slower than the first margin.
+                 *
+                 * Only on a status change, so the extra request rides on the
+                 * one report per attempt that needs it rather than on every
+                 * answer.
+                 */
+                moodleStatusRetryDelay: 4000,
+
+                /**
+                 * @returns {string} cmi.core.lesson_status, or '' when the API
+                 * is absent or refuses the read — callers only compare it with
+                 * itself, so an unreadable status simply reports no change.
+                 */
+                readLessonStatus: function () {
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM) return '';
+                    try {
+                        return pipwerks.SCORM.get(pipwerks.SCORM.version === '2004' ? 'cmi.success_status' : 'cmi.core.lesson_status') || '';
+                    } catch (e) {
+                        return '';
+                    }
+                },
+
+                /**
+                 * @param {boolean} [statusChanged] True when this report moved
+                 * cmi.core.lesson_status, which buys it the later second try.
+                 */
+                triggerMoodleDetection: function (statusChanged) {
+                    if (typeof setTimeout !== 'function') return;
+                    const scorm = $exeDevices.iDevice.gamification.scorm;
+                    const retry = function () {
+                        try {
+                            scorm.commitSession();
+                        } catch (e) {
+                            // The API may not be in a committable state; the
+                            // synchronous commit is the guarantee, not this.
+                        }
+                    };
+                    setTimeout(retry, scorm.moodleDetectionDelay);
+                    if (statusChanged === true) {
+                        setTimeout(retry, scorm.moodleStatusRetryDelay);
+                    }
+                },
+
+                updateActivity: function (game, lmsData, completed) {
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM || typeof game !== 'object' || game === null) {
+                        return;
+                    }
+
+                    // Everything the branches below write is an LMSSetValue, which
+                    // only reaches the LMS's in-memory data model. Moodle refreshes
+                    // its course-structure menu on LMSCommit and nowhere else
+                    // (mod/scorm/datamodels/scorm_12.js LMSCommit ->
+                    // connectPrereqCallback, unless hidetoc === '3'), so without a
+                    // commit the mark the learner has just earned stays out of the
+                    // index for the rest of the visit. Moodle's own autocommit is no
+                    // substitute: it ships disabled and, when enabled, is a
+                    // 60-second timer.
+                    //
+                    // Committing mid-activity is safe: LMSCommit runs
+                    // StoreData(cmi, false), and with storetotaltime false it
+                    // neither promotes the status nor applies the mastery_score
+                    // override. It persists what was written; it decides nothing.
+                    const commitSession =
+                        $exeDevices.iDevice.gamification.scorm.commitSession;
+
+                    const registry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                    if (registry) {
+                        // SCORM 1.2 runtime: the registry is the single owner
+                        // of cmi.suspend_data — report the progress, let the
+                        // runtime serialise it, and never write the legacy
+                        // line format (two writers alternating formats would
+                        // corrupt each other's view on resume).
+                        $exeDevices.iDevice.gamification.scorm.reportActivity(game, {
+                            completed: completed === true,
+                            score: game.scorerp * 10,
+                            answered: parseFloat(game.answered) || 0,
+                        });
+                        const runtime = window.exeScorm12;
+                        if (runtime.policy && typeof runtime.policy.persistActivities === 'function') {
+                            runtime.policy.persistActivities();
+                        }
+                        try {
+                            $exeDevices.iDevice.gamification.scorm.showFinalScore(
+                                $exeDevices.iDevice.gamification.scorm.buildLmsDataFromRegistry(),
+                                game
+                            );
+                        } finally {
+                            // In a `finally`, because showFinalScore writes the score
+                            // and the status and only then paints the result: a failure
+                            // while painting — a missing message, a node an iDevice
+                            // expects and its markup does not have — would otherwise
+                            // leave the LMS holding the values with nothing to persist
+                            // them, which is exactly "the score is right but the menu
+                            // never updates". An activity that reports once, from a
+                            // check button, has no second chance; one that reports per
+                            // answer hides it, because the next report commits what the
+                            // last one left behind.
+                            commitSession();
+                        }
+                        return;
+                    }
+
+                    // Legacy runtime (SCORM 2004 packages and packages
+                    // exported before the SCORM 1.2 runtime rewrite).
+                    // The latest report decides the state, as in the registry:
+                    // a replay that reports `completed: false` reopens the page
+                    // until the activity is finished again.
+                    const scorm = $exeDevices.iDevice.gamification.scorm;
+                    lmsData[game.ideviceNumber] = {
+                        title: game.title,
+                        score: game.scorerp * 10,
+                        weighted: game.weighted,
+                        state: completed === true ? scorm.ACTIVITY_FINISHED : scorm.ACTIVITY_SCORED
+                    };
+
+                    const newFormatData = $exeDevices.iDevice.gamification.scorm.convertToLineFormat(lmsData, game);
+
+                    pipwerks.SCORM.set("cmi.suspend_data", newFormatData);
+
+                    try {
+                        $exeDevices.iDevice.gamification.scorm.showFinalScore(lmsData, game);
+                    } finally {
+                        commitSession();
+                    }
+                },
+
+                showFinalScore: function (lmsData, game) {
+                    if (typeof pipwerks === 'undefined' || !pipwerks.SCORM || typeof game !== 'object' || game === null) {
+                        return;
+                    }
+
+                    if (!lmsData || typeof lmsData !== 'object') {
+                        const fallbackRegistry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                        lmsData = fallbackRegistry
+                            ? $exeDevices.iDevice.gamification.scorm.buildLmsDataFromRegistry()
+                            : $exeDevices.iDevice.gamification.scorm.parseSuspendData(
+                                  pipwerks.SCORM.get("cmi.suspend_data") || ""
+                              );
+                    }
+
+                    // Single source of truth for the aggregate: with the
+                    // SCORM 1.2 registry present, getFinalScore delegates to
+                    // its summary(), which owns the weighting algorithm
+                    // published packages rely on.
+                    const newFinalScore = $exeDevices.iDevice.gamification.scorm.getFinalScore(lmsData);
+
+                    const runtime = typeof window !== 'undefined' ? window.exeScorm12 : null;
+                    // Branch on the CAPABILITY, not on the runtime object: a host that
+                    // ships an older or partial runtime may still expose `policy`, and
+                    // calling a method it does not have would throw before the score
+                    // is written. This file travels with the content, but the Moodle
+                    // plugin injects its own vendored copy of the runtime (complete,
+                    // five layers) into content exported by whichever eXeLearning
+                    // release the author used, so the two can come from different
+                    // releases. Falling through to the legacy branch keeps that host
+                    // scoring.
+                    if (runtime && runtime.policy && typeof runtime.policy.setScoreDetailed === 'function') {
+                        // Game iDevices call this from jQuery ready, which
+                        // runs before loadPage() restores cmi.suspend_data.
+                        // Writing score.raw=0 then would erase a resumed
+                        // attempt; wait until applyEntryPolicy() has run.
+                        const entryReady =
+                            typeof runtime.policy.hasAppliedEntry !== 'function' || runtime.policy.hasAppliedEntry();
+                        if (entryReady) {
+                            // A page the learner opened but never answered must not
+                            // publish a score. cmi.core.score.raw cannot express "no
+                            // answer" — a 0 there reads as "scored zero" — and Moodle
+                            // promotes an `incomplete` status to `completed` as soon as
+                            // any score.raw exists (mod/scorm/locallib.php
+                            // scorm_insert_track, under forcecompleted), so a merely
+                            // visited page would be counted as a finished learning
+                            // object. The status policy still runs: leaving the page
+                            // `incomplete` is the honest report.
+                            // Ask the registry whether any evaluable activity has
+                            // actually produced a score. NOT summary.answered: that
+                            // counter has one writer, `parseFloat(game.answered)` in
+                            // reportActivity(), and no iDevice ever sets game.answered —
+                            // the real ones carry answeredIndexes, questionsAnswered and
+                            // the like — so it is structurally always 0 and keying on it
+                            // would suppress EVERY score, not just the unanswered ones.
+                            // Nor summary.score, which counts an evaluable activity that
+                            // has not scored yet as 0 and so cannot tell the two apart.
+                            //
+                            // A host that assembled the runtime WITHOUT the registry
+                            // layer (tolerated by the adapter's install guard; neither
+                            // eXeLearning's exports nor the Moodle plugin ship such a
+                            // build) gets a null registry: it cannot answer the
+                            // question, so it keeps scoring exactly as before rather
+                            // than being silently suppressed.
+                            const registry = $exeDevices.iDevice.gamification.scorm.getActivityRegistry();
+                            // An EMPTY registry is treated the same way as an absent
+                            // one: no activity registered, so there is nothing to base
+                            // the judgement on. Suppressing there would silence the
+                            // legacy iDevices that score without registering.
+                            //
+                            // `summary().scored` is the registry's own count and its
+                            // single owner; policy.applyEntryPolicy() reads the same
+                            // field. Recomputing the predicate here from list() is what
+                            // let the two paths drift apart in the first place — the
+                            // entry policy published a 0 this branch would have
+                            // suppressed.
+                            const summary = registry ? registry.summary() : null;
+                            const nothingScored = !!summary && summary.total > 0 && summary.scored === 0;
+                            if (!nothingScored) {
+                                // SCORM 1.2 packages: the runtime owns score
+                                // validation and the completion/success policy.
+                                runtime.policy.setScoreDetailed(newFinalScore, 0, 100);
+                            }
+                            if (typeof runtime.policy.recordActivityOutcome === 'function') {
+                                runtime.policy.recordActivityOutcome();
+                            }
+                        }
+                    } else {
+                        // Legacy runtime (SCORM 2004 packages and packages
+                        // exported before the SCORM 1.2 runtime rewrite).
+                        //
+                        // The threshold was a hard-coded 50. It is now the
+                        // weighted mean of the activities' own pass marks, the
+                        // same rule the SCORM 1.2 policy applies; a project
+                        // that never touches the option publishes 5, which is
+                        // 50, so nothing changes for content that does not use
+                        // the feature. There is no policy layer here to consult
+                        // mastery_score, so this path applies the author's
+                        // marks directly.
+                        //
+                        // The author may instead require every activity to
+                        // reach its own mark. Either way the page is judged
+                        // only once its activities are finished, as the SCORM
+                        // 1.2 policy does (getLegacyVerdict). This also runs
+                        // when an iDevice registers, so a page opened and left
+                        // reports incomplete, never completed.
+                        //
+                        // No score is published before any activity has one:
+                        // a 0 would read as "scored zero", the case the SCORM
+                        // 1.2 branch above guards against as well.
+                        const scorm = $exeDevices.iDevice.gamification.scorm;
+                        const verdict = scorm.getLegacyVerdict(lmsData);
+                        if (verdict && verdict.scored) {
+                            pipwerks.SCORM.set(pipwerks.SCORM.version === '2004' ? 'cmi.score.raw' : 'cmi.core.score.raw', newFinalScore);
+                        }
+                        if (verdict) {
+                            scorm.setLegacyStatus(verdict);
+                        }
+                    }
+
+                    $("#eXeScoreNodeScore").text(`${game.msgs.msgYouScore}: ${newFinalScore}/100`);
+                    // Each registration may change the activities' marks, and
+                    // so the page's minimum score.
+                    $exeDevices.iDevice.gamification.scorm.showPagePassScore(
+                        $exeDevices.iDevice.gamification.scorm.getActivityRegistry() ? undefined : lmsData
+                    );
+
+                },
+            },
+
+            colors: {
+                borderColors: {
+                    black: "#1c1b1b",
+                    blue: '#5877c6',
+                    green: '#00a300',
+                    red: '#b3092f',
+                    white: '#f9f9f9',
+                    yellow: '#f3d55a',
+                    grey: '#777777',
+                    incorrect: '#d9d9d9',
+                    correct: '#00ff00'
+                },
+                backColor: {
+                    black: "#1c1b1b",
+                    blue: '#dfe3f1',
+                    green: '#caede8',
+                    red: '#fbd2d6',
+                    white: '#f9f9f9',
+                    yellow: '#fcf4d3',
+                    correct: '#dcffdc',
+                    blackl: '#333333'
+                },
+            },
+
+            report: {
+                updateEvaluationIcon: function (game, isInExe) {
+                    if (typeof game !== 'undefined' && game.main) {
+                        const $gmain = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0);
+                        game.id = $gmain.closest('.idevice_node').attr('id');
+                    }
+                    if (game && game.id && game.evaluation && game.evaluationID && game.evaluationID.length > 0) {
+                        const data = $exeDevices.iDevice.gamification.report.getDataStorage(game.evaluationID);
+                        const $gmain = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0);
+
+                        let score = '',
+                            state = 0;
+
+                        if (!data) {
+                            $exeDevices.iDevice.gamification.report.showEvaluationIcon(game, state, score);
+                            return;
+                        }
+
+                        const findObject = data.activities.find(
+                            obj => obj.id === game.id
+                        );
+
+                        if (findObject) {
+                            state = findObject.state;
+                            score = findObject.score;
+                        }
+
+                        $exeDevices.iDevice.gamification.report.showEvaluationIcon(game, state, score);
+
+                        const anchorId = 'ac-' + game.id;
+                        $(`#${anchorId}`).remove();
+                        $gmain.closest(`.${game.idevice}`).prepend(`<div id="${anchorId}"></div>`);
+
+                        if ($exe.isInExe() || location.protocol === 'file:' || typeof window.API !== 'undefined' ||
+                            typeof window.API_1484_11 !== 'undefined') {
+                            return;
+                        }
+
+                        if (document.readyState === 'complete') {
+                            $exeDevices.iDevice.gamification.report.scrollToHash();
+                        } else {
+                            $(window).on('load', $exeDevices.iDevice.gamification.report.scrollToHash);
+                        }
+                    }
+                },
+
+                showEvaluationIcon: function (game, state, score) {
+                    if (typeof game !== 'object' || game === null) return;
+
+                    const $main = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0),
+                        scoreNumber = parseFloat(score),
+                        formattedScore = !isNaN(scoreNumber) ? scoreNumber.toFixed(2) : '0',
+                        $header = $main.closest(`.${game.idevice}`);
+
+                    let icon = 'exequextsq.svg',
+                        text = game.msgs.msgUncompletedActivity;
+
+                    if (state === 1) {
+                        icon = 'exequextrerrors.svg';
+                        text = game.msgs.msgUnsuccessfulActivity.replace('%s', formattedScore);
+                    } else if (state === 2) {
+                        icon = 'exequexthits.svg';
+                        text = game.msgs.msgSuccessfulActivity.replace('%s', formattedScore);
+                    }
+
+                    $header.find('.Games-ReportIconDiv').remove()
+
+                    const sicon = `<div class="Games-ReportIconDiv d-flex justify-content-start align-items-center w-100 mb-1" style="gap: 0.1em;">
+                            <img src="${game.idevicePath}${icon}" style="width:16px; height:16px; display:block;"><span style="font-size:0.9em;">${text}</span>
+                        </div>`;
+
+                    $header.prepend(sicon);
+                },
+
+                updateEvaluation: function (obj1, obj2, id1) {
+                    if (!obj1) {
+                        obj1 = {
+                            id: id1,
+                            activities: []
+                        };
+                    }
+                    const findObject = obj1.activities.find(
+                        obj => obj.id === obj2.id
+                    );
+                    if (findObject) {
+                        findObject.state = obj2.state;
+                        findObject.score = obj2.score;
+                        findObject.name = obj2.name;
+                        findObject.date = obj2.date;
+                        findObject.page = obj2.page;
+                    } else {
+                        obj1.activities.push({
+                            id: obj2.id,
+                            type: obj2.type,
+                            name: obj2.name,
+                            score: obj2.score,
+                            date: obj2.date,
+                            state: obj2.state,
+                            page: obj2.page,
+                        });
+                    }
+                    return obj1;
+                },
+
+                getDateString: function () {
+                    const currentDate = new Date(),
+                        day = String(currentDate.getDate()).padStart(2, '0'),
+                        month = String(currentDate.getMonth() + 1).padStart(2, '0'),
+                        year = String(currentDate.getFullYear()).padStart(4, '0'),
+                        hours = String(currentDate.getHours()).padStart(2, '0'),
+                        minutes = String(currentDate.getMinutes()).padStart(2, '0'),
+                        seconds = String(currentDate.getSeconds()).padStart(2, '0');
+                    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+
+                },
+
+                getNodeIdevice: function () {
+                    let node = false;
+                    if (!$exe.isInExe()) {
+                        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+                        node = pathSegments.pop()
+                    }
+                    return node;
+                },
+
+                getNameIdevice: function ($main) {
+                    const selector = $exe.isInExe() ? 'header.box-head .box-title' : '.box-title';
+                    return $main.closest('article').find(selector).eq(0).text();
+                },
+
+                saveEvaluation: function (game,) {
+                    if (typeof game !== 'undefined' && game.main) {
+                        const $gmain = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0);
+                        game.id = $gmain.closest('.idevice_node').attr('id');
+                    }
+                    if (game && game.id && game.evaluation && game.evaluationID.length > 0) {
+                        const $main = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0);
+                        // Number.isFinite, not !isNaN, and here rather than in
+                        // each iDevice: twenty of them compute the mark as hits
+                        // over a count they read from their own data, and an
+                        // activity saved with nothing scorable makes that
+                        // division 0/0. sendScoreNew already refuses the result
+                        // on the way to the LMS; this path had no such guard, so
+                        // the NaN was stored in localStorage and decided the
+                        // icon through `parseFloat(score) >= 5`, which a NaN
+                        // fails — an activity the learner passed could be shown
+                        // as failed. isNaN would let Infinity through, which a
+                        // count of zero also produces.
+                        const rawScore = parseFloat(game.scorerp);
+                        const score = Number.isFinite(rawScore) ? rawScore : 0;
+                        // The pass mark used to be a hard-coded 5 here. It is
+                        // now the project's, or this iDevice's own when its
+                        // author customised it -- resolved per activity, on the
+                        // same 0-10 scale every iDevice computes scorerp on.
+                        // This single comparison decides both the report state
+                        // and the message the learner reads, because
+                        // showEvaluationIcon picks msgSuccessfulActivity or
+                        // msgUnsuccessfulActivity from it.
+                        const passMark = $exe.passScore.resolve(game);
+                        const name = $exeDevices.iDevice.gamification.report.getNameIdevice($main),
+                            formattedDate = $exeDevices.iDevice.gamification.report.getDateString(),
+                            scorm = {
+                                'id': game.id,
+                                'type': game.msgs.msgTypeGame,
+                                'name': name,
+                                'score': score,
+                                'date': formattedDate,
+                                'state': (score >= passMark ? 2 : 1),
+                                'page': $exeDevices.iDevice.gamification.report.getNodeIdevice()
+                            },
+                            data = $exeDevices.iDevice.gamification.report.updateEvaluation($exeDevices.iDevice.gamification.report.getDataStorage(game.evaluationID), scorm, game.id);
+
+                        localStorage.setItem('dataEvaluation-' + game.evaluationID, JSON.stringify(data));
+                        $exeDevices.iDevice.gamification.report.showEvaluationIcon(game, scorm.state, scorm.score);
+                        const event = new CustomEvent('gamification-evaluation-saved', { detail: { evaluationID: game.evaluationID, ideviceId: game.id, ideviceType: game.idevice, score: scorm.score, state: scorm.state } });
+                        window.dispatchEvent(event);
+                    }
+                },
+
+                /**
+                 * Tell the learner the mark this activity is passed at, when it
+                 * is not the 5 they take for granted.
+                 *
+                 * Only while something judges the mark: SCORM saving, or the
+                 * progress report under the same condition saveEvaluation()
+                 * applies. The mark is the one resolve() gives that verdict, and
+                 * it is shown as stored, so 7.5 reads 7.5. Placed right before
+                 * the iDevice's main container, which is below its instructions.
+                 *
+                 * The text is the iDevice's own custom text, editable in its
+                 * Custom texts tab. An iDevice saved before that text existed
+                 * has none, and gets the default the page carries in the
+                 * content's language.
+                 *
+                 * An iDevice whose instructions live inside its main container
+                 * names the element that follows them instead, so the notice
+                 * still sits below the instructions and above the activity.
+                 *
+                 * Idempotent: an iDevice that rebuilds its interface gets one
+                 * notice, and one whose mark became 5 loses it.
+                 *
+                 * @param {Object} game The iDevice options object.
+                 * @param {string|Element|jQuery} [before] The element to place the
+                 *   notice before; the main container when absent or not found.
+                 * @returns {jQuery|null} The notice, or null when none is shown.
+                 */
+                showPassScoreNotice: function (game, before) {
+                    if (typeof game !== 'object' || game === null || !game.main) return null;
+                    const $main = game.main.charAt(0) === '.' ? $(`${game.main}`).eq(0) : $(`#${game.main}`).eq(0);
+                    if ($main.length === 0) return null;
+                    const $before = before ? $(before).eq(0) : $();
+                    const $anchor = $before.length ? $before : $main;
+                    $anchor.prev('.exe-pass-score-notice').remove();
+
+                    // Keep the options on the live anchor, including at 5 when
+                    // there is no notice yet. Removed activities then need no
+                    // registry cleanup, and an internal anchor keeps its place.
+                    $anchor.attr('data-exe-pass-score-anchor', '').data('exePassScoreGame', game);
+
+                    const reportActive = !!game.evaluation && typeof game.evaluationID === 'string' && game.evaluationID.length > 0;
+                    if (!(Number(game.isScorm) > 0) && !reportActive) return null;
+                    const mark = $exe.passScore.resolve(game);
+                    if (mark === 5) return null;
+
+                    const custom = game.msgs && game.msgs.msgPassScore;
+                    const fallback = typeof $exe_i18n !== 'undefined' && $exe_i18n ? $exe_i18n.passScoreNotice : '';
+                    const template = custom || fallback;
+                    if (!template) return null;
+
+                    const $notice = $('<p class="exe-pass-score-notice text-danger text-center"></p>')
+                        .text(template.replace('%s', String(mark)));
+                    $anchor.before($notice);
+                    return $notice;
+                },
+
+                /** Refresh inherited marks without rebuilding activities or sending scores. */
+                refreshPassScoreNotices: function () {
+                    $('[data-exe-pass-score-anchor]').each(function () {
+                        const game = $(this).data('exePassScoreGame');
+                        if (game && game.passScoreMode !== 'custom') {
+                            $exeDevices.iDevice.gamification.report.showPassScoreNotice(game, this);
+                        }
+                    });
+                },
+
+                getDataStorage: function (id) {
+                    return $exeDevices.iDevice.gamification.helpers.isJsonString(localStorage.getItem('dataEvaluation-' + id));
+                },
+
+                scrollToHash: function () {
+
+                    if ($exe.isInExe() || location.protocol === 'file:') return;
+
+                    var hash = window.location.hash;
+                    if (!hash) return;
+
+                    var id = hash.substring(1);
+                    var pending = localStorage.getItem('hashScrolled');
+                    if (pending !== id) return;
+                    var $target = $('#' + id);
+                    if ($target.length && $target.hasClass('idevice_node')) {
+                        $('html, body').scrollTop($target.offset().top);
+                    }
+                },
+
+            },
+
+            math: {
+                _loading: false,
+                _callbacks: [],
+
+                engine: $("html").prop("id") == "exe-index" ? "./libs/exe_math/tex-mml-svg.js" : "../libs/exe_math/tex-mml-svg.js",
+
+                engineConfig: window.MathJax,
+
+                loadMathJax: function (callback) {
+                    var self = $exeDevices.iDevice.gamification.math;
+
+                    if (typeof window.MathJax === 'object' && typeof MathJax.typesetPromise === 'function') {
+                        if (callback) callback();
+                        return;
+                    }
+
+                    if (callback) {
+                        self._callbacks.push(callback);
+                    }
+
+                    if (self._loading) {
+                        return;
+                    }
+
+                    var existingScript = document.querySelector('script[src*="tex-mml-svg.js"]');
+                    if (existingScript) {
+                        self._loading = true;
+                        var checkMathJax = function () {
+                            if (typeof window.MathJax === 'object' && typeof MathJax.typesetPromise === 'function') {
+                                self._loading = false;
+                                while (self._callbacks.length > 0) {
+                                    var cb = self._callbacks.shift();
+                                    cb();
+                                }
+                            } else {
+                                setTimeout(checkMathJax, 50);
+                            }
+                        };
+                        checkMathJax();
+                        return;
+                    }
+
+                    self._loading = true;
+                    // For exports: use relative paths. For workarea: use versioned path if available
+                    var isExport = $("html").prop("id") == "exe-index" || !document.querySelector('script[src*="/app/common/"]');
+                    var basePath;
+                    if (isExport) {
+                        basePath = $("html").prop("id") == "exe-index" ? "./libs/exe_math" : "../libs/exe_math";
+                    } else {
+                        // Workarea: detect version and basePath from script tags
+                        var version = (window.eXeLearning && window.eXeLearning.version) || '';
+                        var configBasePath = '';
+                        // Try to get basePath from parsed config first (if available)
+                        if (window.eXeLearning && window.eXeLearning.config && typeof window.eXeLearning.config === 'object') {
+                            configBasePath = window.eXeLearning.config.basePath || '';
+                        }
+                        // Detect version and basePath from script tags as fallback
+                        var scriptTag = document.querySelector('script[src*="/app/common/"]');
+                        if (scriptTag) {
+                            var src = scriptTag.src;
+                            if (!version) {
+                                var versionMatch = src.match(/\/(v[\d.]+[^/]*)\//);
+                                if (versionMatch) version = versionMatch[1];
+                            }
+                            // Detect basePath from script src if not already set
+                            if (!configBasePath) {
+                                try {
+                                    var url = new URL(src);
+                                    var pathname = url.pathname;
+                                    var appIndex = pathname.indexOf('/app/common/');
+                                    if (appIndex > 0) {
+                                        var beforeApp = pathname.substring(0, appIndex);
+                                        if (version && beforeApp.endsWith('/' + version)) {
+                                            configBasePath = beforeApp.substring(0, beforeApp.length - version.length - 1);
+                                        } else {
+                                            configBasePath = beforeApp;
+                                        }
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                        basePath = version ? configBasePath + '/' + version + '/app/common/exe_math' : configBasePath + '/app/common/exe_math';
+                    }
+                    if (!window.MathJax) {
+                        window.MathJax = self.engineConfig;
+                    }
+                    if (!window.MathJax.loader) window.MathJax.loader = {};
+                    if (!window.MathJax.loader.paths) window.MathJax.loader.paths = {};
+                    // Always set basePath for MathJax path resolution
+                    // This fixes path issues in export formats with subdirectories (like EPUB)
+                    if (basePath) {
+                        window.MathJax.loader.paths.mathjax = basePath;
+                    }
+                    var script = document.createElement('script');
+                    script.src = self.engine;
+                    script.async = true;
+                    script.onload = function () {
+                        var checkReady = function () {
+                            if (typeof window.MathJax === 'object' && typeof MathJax.typesetPromise === 'function') {
+                                self._loading = false;
+                                while (self._callbacks.length > 0) {
+                                    var cb = self._callbacks.shift();
+                                    cb();
+                                }
+                            } else {
+                                setTimeout(checkReady, 50);
+                            }
+                        };
+                        checkReady();
+                    };
+                    document.head.appendChild(script);
+                },
+
+                hasLatex: function (text) {
+                    if (!text) return false;
+                    // Ignore already pre-rendered math: its data-latex attribute keeps the
+                    // original delimiters (e.g. \begin{...}) which would otherwise re-trigger
+                    // a MathJax load in exports that ship no MathJax engine (404).
+                    var stripped = String(text).replace(
+                        /<span[^>]*\bexe-math-rendered\b[^>]*>[\s\S]*?<\/span>/g,
+                        ''
+                    );
+                    return /\\\(|\\\[|\\begin\{|\$\$/.test(stripped);
+                },
+
+                updateLatex: function (target, opts) {
+                    var self = $exeDevices.iDevice.gamification.math;
+                    var options = opts || {};
+
+                    function nodesFrom(t) {
+                        if (!t) return [];
+                        if (typeof t === 'string') {
+                            try { return Array.from(document.querySelectorAll(t)); }
+                            catch (e) { console.warn('selector inválido:', t, e); return []; }
+                        }
+                        if (t.nodeType === 1) return [t];
+                        if (typeof t.length === 'number') return Array.from(t);
+                        return [];
+                    }
+
+                    function runV3(nodes) {
+                        if (!nodes.length) return;
+                        // Filter out nodes in hidden SPA pages (prevents replaceChild errors)
+                        var visibleNodes = nodes.filter(function(n) {
+                            var spaPage = n.closest('.spa-page');
+                            // If inside a SPA page, only process if active
+                            if (spaPage) return spaPage.classList.contains('active');
+                            // If not in a SPA page, always process
+                            return true;
+                        });
+                        if (!visibleNodes.length) return;
+                        var start = (MathJax.startup && MathJax.startup.promise) ? MathJax.startup.promise : Promise.resolve();
+                        return start.then(function () {
+                            if (typeof MathJax.typesetClear === 'function') MathJax.typesetClear(visibleNodes);
+                            return (MathJax.typesetPromise ? MathJax.typesetPromise(visibleNodes) : MathJax.typeset(visibleNodes));
+                        }).catch(function (e) { console.error('MathJax v3 typeset error:', e); });
+                    }
+
+                    function runV2(nodes) {
+                        if (!nodes.length) return;
+                        nodes.forEach(function (n) {
+                            MathJax.Hub.Queue(['Typeset', MathJax.Hub, n]);
+                        });
+                    }
+
+                    function typesetNow() {
+                        var nodes = nodesFrom(target);
+                        if (!nodes.length) return;
+
+                        if (typeof MathJax === 'undefined') {
+                            self.loadMathJax(function () {
+                                typesetNow();
+                            });
+                            return;
+                        }
+
+                        if (MathJax.typesetPromise || MathJax.startup) return runV3(nodes);
+                        if (MathJax.Hub && typeof MathJax.Hub.Queue === 'function') return runV2(nodes);
+                    }
+
+                    if (options.defer) {
+                        // Espera a que termine la animación/visibilidad de la slide
+                        requestAnimationFrame(function () { requestAnimationFrame(typesetNow); });
+                    } else {
+                        typesetNow();
+                    }
+                }
+            },
+
+
+            media: {
+                extractURLGD: function (urlmedia) {
+                    let sUrl = urlmedia;
+
+                    if (
+                        typeof urlmedia !== 'undefined' &&
+                        urlmedia.length > 0 &&
+                        urlmedia.toLowerCase().startsWith('https://drive.google.com') &&
+                        urlmedia.toLowerCase().includes('sharing')
+                    ) {
+                        sUrl = sUrl.replace(
+                            /https:\/\/drive\.google\.com\/file\/d\/(.*?)\/.*?\?usp=sharing/g,
+                            'https://docs.google.com/uc?export=open&id=$1'
+                        );
+                    } else if (
+                        typeof urlmedia !== 'undefined' &&
+                        urlmedia.length > 10 &&
+                        $exeDevices.iDevice.gamification.media.getURLAudioMediaTeca(urlmedia)
+                    ) {
+                        sUrl = $exeDevices.iDevice.gamification.media.getURLAudioMediaTeca(urlmedia);
+                    }
+
+                    return sUrl;
+                },
+
+                getURLVideoMediaTeca: function (url) {
+                    if (!url) return false;
+
+                    if (url.includes("https://mediateca.educa.madrid.org/video/")) {
+                        const id = url.split("https://mediateca.educa.madrid.org/video/")[1].split("?")[0];
+                        return `http://mediateca.educa.madrid.org/streaming.php?id=${id}`;
+                    }
+
+                    return false;
+                },
+
+                getURLAudioMediaTeca: function (url) {
+                    if (!url) return false;
+
+                    let id = '';
+                    if (url.includes("https://mediateca.educa.madrid.org/audio/")) {
+                        id = url.split("https://mediateca.educa.madrid.org/audio/")[1].split("?")[0];
+                    } else if (url.includes("https://mediateca.educa.madrid.org/video/")) {
+                        id = url.split("https://mediateca.educa.madrid.org/video/")[1].split("?")[0];
+                    } else {
+                        return false;
+                    }
+                    return `https://mediateca.educa.madrid.org/streaming.php?id=${id}`;
+                },
+
+                getIDYoutube: function (url) {
+                    if (!url) return "";
+                    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/,
+                        match = url.match(regExp);
+                    return (match && match[2].length === 11) ? match[2] : "";
+                },
+
+                loadYoutubeApi: function (youTubeReady) {
+                    onYouTubeIframeAPIReady = youTubeReady;
+                    var tag = document.createElement('script');
+                    tag.src = "https://www.youtube.com/iframe_api";
+                    var firstScriptTag = document.getElementsByTagName('script')[0];
+                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+                },
+
+                playerAudio: null,
+                currentAudioUrl: null,
+                playSound: async function (selectedFile) {
+                    if (!selectedFile || typeof selectedFile !== 'string') {
+                        console.error('playSound: Invalid audio URL');
+                        return;
+                    }
+
+                    // If the same audio is playing, stop it (toggle behavior)
+                    if (
+                        this.playerAudio &&
+                        this.currentAudioUrl === selectedFile &&
+                        !this.playerAudio.paused
+                    ) {
+                        this.stopSound();
+                        return;
+                    }
+
+                    // Stop any currently playing audio before playing new one
+                    this.stopSound();
+
+                    let audioUrl = selectedFile;
+
+                    // Extract URL from Google Drive if applicable
+                    if (
+                        typeof $exeDevices !== 'undefined' &&
+                        $exeDevices.iDevice?.gamification?.media?.extractURLGD
+                    ) {
+                        audioUrl = $exeDevices.iDevice.gamification.media.extractURLGD(audioUrl);
+                    }
+
+                    // Store the original URL for comparison
+                    this.currentAudioUrl = selectedFile;
+
+                    // Create and play the audio
+                    this.playerAudio = new Audio(audioUrl);
+                    this.playerAudio
+                        .play()
+                        .catch((error) => console.error('playSound: Error playing audio:', error));
+                },
+
+                /**
+                 * Stop the currently playing audio
+                 */
+                stopSound: function () {
+                    if (this.playerAudio && typeof this.playerAudio.pause === 'function') {
+                        this.playerAudio.pause();
+                        this.playerAudio = null;
+                    }
+                    this.currentAudioUrl = null;
+                },
+                playSound1: function (selectedFile, game) {
+                    if (typeof game !== 'object' || game === null) return;
+                    if (!selectedFile || typeof selectedFile !== 'string') return;
+
+                    selectedFile = $exeDevices.iDevice.gamification.media.extractURLGD(selectedFile);
+
+                    // If the same audio is playing, stop it (toggle behavior)
+                    if (
+                        game.playerAudio &&
+                        game.currentAudioUrl === selectedFile &&
+                        !game.playerAudio.paused
+                    ) {
+                        this.stopSound(game);
+                        return;
+                    }
+
+                    // Stop any currently playing audio before playing new one
+                    this.stopSound(game);
+
+                    // Store the URL for comparison
+                    game.currentAudioUrl = selectedFile;
+
+                    // Create and play the audio
+                    game.playerAudio = new Audio(selectedFile);
+                    game.playerAudio.play().catch(error => console.error("playSound: Error playing audio:", error));
+                },
+
+                startVideo: function (id, start, end, game, type, instance, updateTimerDisplayLocal) {
+                    if (typeof game !== 'object' || game === null) return;
+
+                    const mstart = start < 1 ? 0.1 : start;
+
+                    if (type === 1) {
+                        if (game.localPlayer) {
+                            game.pointEnd = end;
+                            game.localPlayer.src = id
+                            game.localPlayer.currentTime = parseFloat(start)
+                            if (typeof game.localPlayer.play == "function") {
+                                game.localPlayer.play();
+                            }
+                        }
+                        clearInterval(game.timeUpdateInterval);
+                        game.timeUpdateInterval = setInterval(function () {
+                            updateTimerDisplayLocal(instance);
+                        }, 1000);
+                        return;
+                    }
+
+                    if (game.player && typeof game.player.loadVideoById == "function") {
+                        game.player.loadVideoById({
+                            'videoId': id,
+                            'startSeconds': mstart,
+                            'endSeconds': end
+                        });
+                    }
+                },
+
+                startVideoIntro: function (id, start, end, game, instance, type, updateTimerDisplayLocalIntro) {
+                    if (typeof game !== 'object' || game === null) return;
+
+                    const mstart = start < 1 ? 0.1 : start;
+
+                    if (type === 1) {
+                        if (game.localPlayerIntro) {
+                            game.pointEndIntro = end;
+                            game.localPlayerIntro.src = id
+                            game.localPlayerIntro.currentTime = parseFloat(start)
+                            if (typeof game.localPlayerIntro.play == "function") {
+                                game.localPlayerIntro.play();
+                            }
+                        }
+                        clearInterval(game.timeUpdateIntervalIntro);
+                        game.timeUpdateIntervalIntro = setInterval(function () {
+                            updateTimerDisplayLocalIntro(instance);
+                        }, 1000);
+                        return
+                    }
+
+                    if (game.playerIntro) {
+                        if (typeof game.playerIntro.loadVideoById == "function") {
+                            game.playerIntro.loadVideoById({
+                                'videoId': id,
+                                'startSeconds': mstart,
+                                'endSeconds': end
+                            });
+                        }
+                    }
+                },
+
+                stopVideo: function (game) {
+                    if (typeof game !== 'object' || game === null) return;
+
+                    if (game.localPlayer && typeof game.localPlayer.pause === "function") {
+                        game.localPlayer.pause();
+                    }
+                    if (game.player && typeof game.player.pauseVideo === "function") {
+                        game.player.pauseVideo();
+                    }
+                },
+
+                playVideo: function (game) {
+                    if (game && game.player && typeof game.player.playVideo == "function") {
+                        game.player.playVideo();
+                    }
+                },
+
+                stopVideo: function (game) {
+                    if (game && game.localPlayer && typeof game.localPlayer.pause === "function") {
+                        game.localPlayer.pause();
+                    }
+                    if (game && game.player && typeof game.player.pauseVideo === "function") {
+                        game.player.pauseVideo();
+                    }
+                },
+
+                stopVideoIntro: function (game) {
+                    if (typeof game !== 'object' || game === null) return;
+
+                    if (game.localPlayerIntro && typeof game.localPlayerIntro.pause == "function") {
+                        game.localPlayerIntro.pause();
+                    }
+
+                    if (game.playerIntro && typeof game.playerIntro.pauseVideo == "function") {
+                        game.playerIntro.pauseVideo();
+                    }
+                },
+
+                muteVideo: function (mute, game) {
+                    if (game && game.localPlayer) {
+                        if (mute) {
+                            game.localPlayer.muted = true;
+                        } else {
+                            game.localPlayer.muted = false;;
+                        }
+                    }
+                    if (game && game.player) {
+                        if (mute) {
+                            if (typeof game.player.mute == "function") {
+                                game.player.mute();
+                            }
+                        } else {
+                            if (typeof game.player.unMute == "function") {
+                                game.player.unMute();
+                            }
+                        }
+                    }
+                },
+
+                YouTubeAPILoader: (function () {
+                    let apiReadyPromise;
+
+                    function load() {
+                        if (!apiReadyPromise) {
+                            apiReadyPromise = new Promise((resolve, reject) => {
+                                if (window.YT && window.YT.Player) {
+                                    return resolve(window.YT);
+                                }
+                                window.onYouTubeIframeAPIReady = () => resolve(window.YT);
+                                const tag = document.createElement('script');
+                                tag.src = 'https://www.youtube.com/iframe_api';
+                                tag.onerror = () => reject(new Error(_('Could not load YouTube API')));
+                                document.head.appendChild(tag);
+                            });
+                        }
+                        return apiReadyPromise;
+                    }
+
+                    return { load };
+                })(),
+
+            },
+
+            helpers: {
+                /**
+                 * Sanitizes a JSON string by escaping unescaped control characters inside string values.
+                 *
+                 * This function processes a JSON string character by character, tracking whether
+                 * the current position is inside a string value (between quotes). When inside a
+                 * string, it escapes any control characters that are not properly escaped.
+                 *
+                 * Control characters handled:
+                 * - 0x08 (backspace) -> \b
+                 * - 0x09 (tab) -> \t
+                 * - 0x0A (newline) -> \n
+                 * - 0x0C (form feed) -> \f
+                 * - 0x0D (carriage return) -> \r
+                 * - 0x2028, 0x2029 (line/paragraph separators) -> \uXXXX
+                 * - Other control chars (0x00-0x1F, 0x7F, 0x80-0x9F) -> \uXXXX
+                 *
+                 * @param {string} jsonString - The JSON string to sanitize
+                 * @returns {string} The sanitized JSON string with properly escaped control characters
+                 *
+                 * @example
+                 * // Sanitize JSON with literal newline inside a string value
+                 * const input = '{"text":"line1\nline2"}';  // literal newline, not \\n
+                 * const output = sanitizeJSONString(input);
+                 * // output: '{"text":"line1\\nline2"}'  // now properly escaped
+                 * JSON.parse(output);  // works without error
+                 */
+                sanitizeJSONString: function (jsonString) {
+                    if (typeof jsonString !== 'string' || jsonString === '') {
+                        return jsonString;
+                    }
+
+                    const BACKSPACE = 0x08;
+                    const TAB = 0x09;
+                    const NEWLINE = 0x0a;
+                    const FORM_FEED = 0x0c;
+                    const CARRIAGE_RETURN = 0x0d;
+                    const DELETE = 0x7f;
+                    const LINE_SEPARATOR = 0x2028;
+                    const PARAGRAPH_SEPARATOR = 0x2029;
+
+                    let inString = false;
+                    let result = '';
+
+                    for (let i = 0; i < jsonString.length; i++) {
+                        const char = jsonString[i];
+
+                        // Outside of a string value - just copy the character
+                        if (!inString) {
+                            if (char === '"') {
+                                inString = true;
+                            }
+                            result += char;
+                            continue;
+                        }
+
+                        // Handle escape sequences - copy the backslash and next character as-is
+                        if (char === '\\') {
+                            const nextChar = jsonString[i + 1];
+                            if (nextChar !== undefined) {
+                                result += char + nextChar;
+                                i++;
+                            } else {
+                                result += char;
+                            }
+                            continue;
+                        }
+
+                        // End of string value
+                        if (char === '"') {
+                            inString = false;
+                            result += char;
+                            continue;
+                        }
+
+                        // Inside a string value - escape control characters
+                        const charCode = char.charCodeAt(0);
+
+                        switch (charCode) {
+                            case BACKSPACE:
+                                result += '\\b';
+                                break;
+                            case TAB:
+                                result += '\\t';
+                                break;
+                            case NEWLINE:
+                                result += '\\n';
+                                break;
+                            case FORM_FEED:
+                                result += '\\f';
+                                break;
+                            case CARRIAGE_RETURN:
+                                result += '\\r';
+                                break;
+                            case LINE_SEPARATOR:
+                            case PARAGRAPH_SEPARATOR:
+                                result += '\\u' + charCode.toString(16).padStart(4, '0');
+                                break;
+                            default:
+                                // Escape other control characters (C0, DEL, C1 control codes)
+                                if (charCode < 0x20 || charCode === DELETE || (charCode >= 0x80 && charCode <= 0x9f)) {
+                                    result += '\\u' + charCode.toString(16).padStart(4, '0');
+                                } else {
+                                    result += char;
+                                }
+                        }
+                    }
+
+                    return result;
+                },
+                isJsonString: function (str) {
+                    if (typeof str !== 'string') return false;
+                    str = str.trim();
+                    if (str.startsWith('{') && str.endsWith('}')) {
+                        try {
+                            str = $exeDevices.iDevice.gamification.helpers.sanitizeJSONString(str);
+                            const o = JSON.parse(str);
+                            if (o && typeof o === 'object' && !Array.isArray(o)) {
+                                return o;
+                            }
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+                    return false;
+                },
+
+                shuffleAds: function (arr) {
+                    if (Array.isArray(arr)) {
+                        for (let i = arr.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [arr[i], arr[j]] = [arr[j], arr[i]];
+                        }
+                    }
+                    return arr;
+                },
+
+                decrypt: function (str) {
+                    str = str || "";
+                    str = (str === "undefined" || str === "null") ? "" : str;
+                    str = unescape(str);
+                    try {
+                        const key = 146;
+                        let pos = 0,
+                            ostr = '';
+                        while (pos < str.length) {
+                            ostr += String.fromCharCode(key ^ str.charCodeAt(pos));
+                            pos += 1;
+                        }
+                        return ostr;
+                    } catch (ex) {
+                        return '';
+                    }
+                },
+
+                encrypt: function (str = '') {
+                    if (!str || str === 'undefined' || str === 'null') str = '';
+                    try {
+                        const key = 146;
+                        return escape(str.split('').map(char => String.fromCharCode(char.charCodeAt(0) ^ key)).join(''));
+                    } catch (ex) {
+                        return '';
+                    }
+                },
+
+                exitFullscreen: function () {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    }
+                },
+
+                getFullscreen: function (element) {
+                    if (element.requestFullscreen) {
+                        element.requestFullscreen();
+                    } else if (element.mozRequestFullScreen) {
+                        element.mozRequestFullScreen();
+                    } else if (element.webkitRequestFullscreen) {
+                        element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+                    } else if (element.msRequestFullscreen) {
+                        element.msRequestFullscreen();
+                    }
+                },
+
+                toggleFullscreen: function (element) {
+                    const elem = element || document.documentElement;
+                    if (!document.fullscreenElement && !document.mozFullScreenElement &&
+                        !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                        $exeDevices.iDevice.gamification.helpers.getFullscreen(elem);
+                    } else {
+                        $exeDevices.iDevice.gamification.helpers.exitFullscreen();
+                    }
+                },
+
+                supportedBrowser: function (idevice) {
+                    const isSupported = !(navigator.appName === 'Microsoft Internet Explorer' || navigator.userAgent.includes('MSIE '));
+                    if (!isSupported) {
+                        const bns = $(`.${idevice}-bns`).eq(0).text() || 'Your browser is not compatible with this tool.';
+                        $(`.${idevice}-instructions`).text(bns);
+                    }
+                    return isSupported;
+                },
+
+                getTimeSeconds: function (iT) {
+                    const times = [15, 30, 60, 180, 300, 600]
+                    if ((iT) < times.length) return times[iT];
+                    return iT;
+
+                },
+
+                getTimeToString: function (iTime) {
+                    const mMinutes = Math.floor(iTime / 60) % 60,
+                        mSeconds = iTime % 60,
+                        formattedMinutes = mMinutes < 10 ? `0${mMinutes}` : mMinutes,
+                        formattedSeconds = mSeconds < 10 ? `0${mSeconds}` : mSeconds;
+                    return `${formattedMinutes}:${formattedSeconds}`;
+                },
+
+                // iDevice export tests resolve this through the mock in
+                // public/vitest.setup.js, so keep that mock's contract in sync
+                // with this one or those tests will pass against a stale copy.
+                getQuestions: function (questions, percentage, random) {
+                    // Every caller reads .length off the result, so returning a
+                    // non-array unchanged only defers the failure to them.
+                    if (!Array.isArray(questions)) return [];
+                    const totalQuestions = questions.length;
+
+                    if (percentage >= 100 && !random) return questions;
+
+                    const num = Math.max(1, Math.round((percentage * totalQuestions) / 100));
+
+                    if (num >= totalQuestions && !random) return questions;
+
+                    const indices = Array.from({ length: totalQuestions }, (_, i) => i);
+                    if (random) {
+                        $exeDevices.iDevice.gamification.helpers.shuffleAds(indices);
+                    }
+
+                    return indices.slice(0, num).map(index => questions[index]);
+                },
+                removeTags: (str) => {
+                    const wrapper = $("<div></div>").html(str);
+                    return wrapper.text();
+                },
+
+                generarID: function () {
+                    const fecha = new Date(),
+                        a = fecha.getUTCFullYear(),
+                        m = fecha.getUTCMonth() + 1,
+                        d = fecha.getUTCDate(),
+                        h = fecha.getUTCHours(),
+                        min = fecha.getUTCMinutes(),
+                        s = fecha.getUTCSeconds(),
+                        o = fecha.getTimezoneOffset();
+                    return `${a}${m}${d}${h}${min}${s}${o}`;
+                },
+
+                hourToSeconds: function (str) {
+                    let time = str.split(":");
+                    if (time.length === 1) time = ["00", "00", time[0]];
+                    if (time.length === 2) time = ["00", ...time];
+                    return (+time[0] * 60 * 60) + (+time[1] * 60) + (+time[2]);
+                },
+                secondsToHour: function (totalSec) {
+                    const time = Math.round(totalSec),
+                        hours = String(Math.floor(time / 3600)).padStart(2, '0'),
+                        minutes = String(Math.floor((time % 3600) / 60)).padStart(2, '0'),
+                        seconds = String(time % 60).padStart(2, '0');
+                    return `${hours}:${minutes}:${seconds}`;
+                },
+                arrayMove: function (arr, oldIndex, newIndex) {
+                    if (newIndex >= arr.length) {
+                        var k = newIndex - arr.length + 1;
+                        while (k--) {
+                            arr.push(undefined);
+                        }
+                    }
+                    arr.splice(newIndex, 0, arr.splice(oldIndex, 1)[0]);
+                },
+
+                showFullscreenImage: function (imageSrc, $container) {
+                    const $overlay = $('<div>', {
+                        class: 'Games-OverlayImage position-fixed top-0 start-0 end-0 bottom-0 d-flex align-items-center justify-content-center',
+                        css: {
+                            display: 'none',
+                            'background-color': 'rgba(0, 0, 0, 0.8)',
+                            'z-index': 2000
+                        }
+                    });
+                    const $image = $('<img>', {
+                        src: imageSrc,
+                        class: 'Games-FullScreenImage mw-100 object-fit-contain',
+                        css: {
+                            'max-height': '100%',
+                            'z-index': 2000
+                        },
+                        alt: 'Image'
+                    });
+
+                    $overlay.append($image);
+
+                    const $ctn = $exeDevices.iDevice.gamification.helpers.isFullscreen()
+                        ? $container
+                        : $('body');
+
+                    $ctn.append($overlay);
+
+                    $overlay.fadeIn(300);
+
+                    $overlay.on('click', function () {
+                        $overlay.fadeOut(300, function () {
+                            $overlay.remove();
+                        });
+                    });
+                },
+
+                isFullscreen: function () {
+                    const fullscreenSupported = !!(
+                        document.fullscreenEnabled ||
+                        document.webkitFullscreenEnabled ||
+                        document.mozFullScreenEnabled ||
+                        document.msFullscreenEnabled
+                    );
+
+                    if (!fullscreenSupported) return false;
+                    const isFullscreenActive = !!(
+                        document.fullscreenElement ||
+                        document.webkitFullscreenElement ||
+                        document.mozFullScreenElement ||
+                        document.msFullscreenElement
+                    );
+
+                    return isFullscreenActive;
+                }
+
+            },
+            observers: {
+                debounce: function (func, wait) {
+                    let timeout;
+                    return function (...args) {
+                        const later = () => {
+                            clearTimeout(timeout);
+                            func(...args);
+                        };
+                        clearTimeout(timeout);
+                        timeout = setTimeout(later, wait);
+                    };
+                },
+
+                observeMutations: function ($idevice, element) {
+                    if (!element) return;
+
+                    if (!$idevice.observers) $idevice.observers = new Map();
+
+                    if ($idevice.observers.has(element)) return $idevice.observers.get(element);
+
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            const mode = element.getAttribute('mode');
+                            if (
+                                (mutation.attributeName === 'mode' && mode === 'edition') ||
+                                (mutation.attributeName === 'node-selected' && mode === 'view')
+                            ) {
+                                $exeDevices.iDevice.gamification.observers.observersDisconnect($idevice);
+                            }
+                        });
+                    });
+
+                    observer.observe(element, {
+                        attributes: true,
+                        attributeFilter: ['mode', 'node-selected'],
+                    });
+
+                    $idevice.observers.set(element, observer);
+
+                    return observer;
+                },
+
+                observeResize: function ($idevice, element) {
+                    if (!element) return;
+
+                    if (!$idevice.observersresize) $idevice.observersresize = new Map();
+                    if ($idevice.observersresize.has(element)) return $idevice.observersresize.get(element);
+                    const resizeObserver = new ResizeObserver($exeDevices.iDevice.gamification.observers.debounce(resizeEntries => {
+                        const isMap = $idevice.options instanceof Map;
+                        const isArray = Array.isArray($idevice.options)
+                        const optionEntries = isMap
+                            ? $idevice.options.entries()
+                            : isArray
+                                ? $idevice.options.entries()
+                                : [];
+                        for (let [keyOrIndex, option] of optionEntries) {
+                            if (typeof $idevice.refreshImageActive === "function") {
+                                $idevice.refreshImageActive(keyOrIndex);
+                            }
+                            if (typeof $idevice.refreshGame === "function") {
+                                $idevice.refreshGame(keyOrIndex);
+                            }
+                        }
+                    }, 100));
+
+                    resizeObserver.observe(element);
+                    $idevice.observersresize.set(element, resizeObserver);
+                },
+
+                observersDisconnect: function ($idevice) {
+                    if (!$idevice) return;
+
+                    const isMap = $idevice.options instanceof Map;
+                    const isArray = Array.isArray($idevice.options);
+                    const optionEntries = isMap
+                        ? $idevice.options.entries()
+                        : isArray
+                            ? $idevice.options.entries()
+                            : [];
+
+                    for (let [keyOrIndex, option] of optionEntries) {
+                        if (option && option.gameStarted) {
+                            if (typeof $idevice.stopSound === "function") {
+                                $idevice.stopSound(option);
+                            }
+                        }
+                        if (option && option.counterClock) {
+                            clearInterval(option.counterClock);
+                            option.counterClock = null;
+                        }
+                    }
+
+                    if ($idevice.observers) {
+                        $idevice.observers.forEach((observer) => {
+                            observer.disconnect();
+                        });
+                        $idevice.observers.clear();
+                    }
+
+                    if ($idevice.observersresize) {
+                        $idevice.observersresize.forEach((observer) => {
+                            observer.disconnect();
+                        });
+                        $idevice.observersresize.clear();
+                    }
+                },
+            },
+        },
+
+    }
+}
+
+// Export globals for browser and test environments
+if (typeof window !== 'undefined') {
+    window.$exe = $exe;
+    window.$exeDevices = $exeDevices;
+}
+if (typeof global !== 'undefined') {
+    global.$exe = $exe;
+    global.$exeDevices = $exeDevices;
+}
+
+/* Code highlighter */
+var $exeHighlighter = {
+    init: function () {
+        var blocks = $(".highlighted-code");
+        if (blocks.length == 0) return;
+        var OK = true;
+        var t = $exe.isIE();
+        if (t && t < 9) OK = false;
+        if (OK) {
+            blocks.each(
+                function () {
+                    var e = $(this);
+                    var pre = $("PRE", e);
+                    var c = e.attr("class");
+                    if (c.indexOf("line-numbers") != -1) pre.addClass("line-numbers");
+                    if (c.indexOf("hightlight-") != -1) {
+                        var hightlight = c.split("hightlight-");
+                        if (hightlight.length > 1) {
+                            hightlight = hightlight[1];
+                            hightlight = hightlight.replace(/\and/g, ',');
+                            pre.attr('data-line', hightlight);
+                        }
+                    }
+                }
+            );
+            Prism.highlightAll();
+        } else {
+            blocks.attr("class", "pre-code");
+        }
+    },
+    // To review
+    // Line 27 (line numbers plugin):
+    checkClass: function (s, e) {
+        // We replace s.test(e.element.className) with $exeHighlighter.checkClass(s,e)
+        if (document.body.className.indexOf("exe-epub3") == 0) {
+            var wrapper = $(e.element.parentNode).parents(".highlighted-code");
+            var wrapperClass = "";
+            var hasLines = false;
+            if (wrapper.length == 1) wrapperClass = wrapper.attr("class")
+            if (wrapperClass.indexOf("highlighted-code") != -1) hasLines = true;
+            return hasLines;
+        }
+        return s.test(e.element.className);
+    }
+}
+$(function () {
+    if (window.eXeLearning === undefined) $exeHighlighter.init();
+});
