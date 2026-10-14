@@ -6,11 +6,11 @@ El ejemplo que lo acompaña, **«Ecuaciones de segundo grado»**, tiene 13 pági
 
 ![Estilo Consola de eXeLearning](captura.png)
 
-[Ejemplo publicado](https://jjdeharo.github.io/exelearning-estilos/consola/) · [Descargar el estilo](https://jjdeharo.github.io/exelearning-estilos/consola/descargas/consola.zip) · [Descargar el ejemplo](https://jjdeharo.github.io/exelearning-estilos/consola/descargas/ecuaciones-segundo-grado.elpx)
+[Ejemplo publicado](https://jjdeharo.github.io/exelearning-estilos/consola/) · [Descargar el estilo](https://jjdeharo.github.io/exelearning-estilos/consola/descargas/consola.zip) · [Descargar el ejemplo](https://jjdeharo.github.io/exelearning-estilos/consola/descargas/ecuaciones-segundo-grado.elpx) · [Abrir el ejemplo en eXeLearning en línea](https://static.exelearning.dev/?url=https://jjdeharo.github.io/exelearning-estilos/consola/descargas/ecuaciones-segundo-grado.elpx)
 
 ## Cómo usarlo
 
-**Lo más sencillo: partir del ejemplo.** El archivo `ecuaciones-segundo-grado.elpx` lleva el estilo dentro. Al abrirlo en eXeLearning, el programa ofrece instalarlo. Después se sustituye el contenido del ejemplo por el propio, o se aplica el estilo, ya instalado, a otro proyecto.
+**Lo más sencillo: partir del ejemplo.** La barra de tmux del ejemplo publicado lleva además «✎ Editar en eXeLearning», que lo abre en eXeLearning en línea. También se puede descargar: el archivo `ecuaciones-segundo-grado.elpx` lleva el estilo dentro. Al abrirlo en eXeLearning, el programa ofrece instalarlo. Después se sustituye el contenido del ejemplo por el propio, o se aplica el estilo, ya instalado, a otro proyecto.
 
 **Instalar solo el estilo.** Se descarga `consola.zip` y, en eXeLearning, se importa desde el panel de estilos, en la pestaña de estilos importados.
 
@@ -60,6 +60,7 @@ Esta carpeta es una de las del repositorio [exelearning-estilos](../README.md). 
 | `theme/` | El estilo: `config.xml`, `style.css`, `style.js`, la miniatura y la tipografía (`fonts/`). Los iconos de las cajas son los de eXeLearning |
 | `content.xml`, `content.dtd` | El proyecto de eXeLearning del ejemplo |
 | `index.html`, `html/`, `libs/`, `idevices/`, `content/`, `search_index.js` | El ejemplo exportado por eXeLearning |
+| `edit-in-exelearning.js` | «Editar en eXeLearning» del ejemplo publicado; no forma parte del estilo |
 | `scripts/estilo.py` | Lo propio de este estilo en el ejemplo común: presentación, cómo moverse, clases y créditos |
 | `scripts/comprobar-navegador.cjs` | Recorre el ejemplo en el navegador: árbol, prompt, barra, terminal, soluciones, actividades y móvil |
 | `docs/adr/` | Registro de decisiones |

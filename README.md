@@ -11,7 +11,7 @@ Estilos para [eXeLearning](https://exelearning.net/) 4.0.5 o posterior, de Juan 
 
 ## Cómo usar un estilo
 
-**Lo más sencillo: partir del ejemplo.** Se descarga el `.elpx` del ejemplo y se abre en eXeLearning, que ofrece instalar el estilo. Después se sustituye el contenido por el propio, o se aplica el estilo a otro proyecto.
+**Lo más sencillo: partir del ejemplo.** Se abre en eXeLearning en línea con el botón de editar de su página (o se descarga su `.elpx` y se abre en eXeLearning), y el programa ofrece instalar el estilo. Después se sustituye el contenido por el propio, o se aplica el estilo a otro proyecto.
 
 **Instalar solo el estilo.** Se descarga su `.zip` y, en eXeLearning, se importa desde el panel de estilos, en la pestaña de estilos importados.
 

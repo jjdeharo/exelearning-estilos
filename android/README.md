@@ -6,11 +6,11 @@ El ejemplo es el mismo que el del estilo [Consola](../consola/): **«Ecuaciones 
 
 ![Estilo Android de eXeLearning](captura.png)
 
-[Ejemplo publicado](https://jjdeharo.github.io/exelearning-estilos/android/) · [Descargar el estilo](https://jjdeharo.github.io/exelearning-estilos/android/descargas/android.zip) · [Descargar el ejemplo](https://jjdeharo.github.io/exelearning-estilos/android/descargas/ecuaciones-segundo-grado.elpx)
+[Ejemplo publicado](https://jjdeharo.github.io/exelearning-estilos/android/) · [Descargar el estilo](https://jjdeharo.github.io/exelearning-estilos/android/descargas/android.zip) · [Descargar el ejemplo](https://jjdeharo.github.io/exelearning-estilos/android/descargas/ecuaciones-segundo-grado.elpx) · [Abrir el ejemplo en eXeLearning en línea](https://static.exelearning.dev/?url=https://jjdeharo.github.io/exelearning-estilos/android/descargas/ecuaciones-segundo-grado.elpx)
 
 ## Cómo usarlo
 
-**Lo más sencillo: partir del ejemplo.** El archivo `ecuaciones-segundo-grado.elpx` lleva el estilo dentro. Al abrirlo en eXeLearning, el programa ofrece instalarlo. Después se sustituye el contenido del ejemplo por el propio, o se aplica el estilo, ya instalado, a otro proyecto.
+**Lo más sencillo: partir del ejemplo.** En el ejemplo publicado, al pasar el ratón por la pantalla del móvil o al tocarla aparece un botón con un lápiz que lo abre en eXeLearning en línea. También se puede descargar: el archivo `ecuaciones-segundo-grado.elpx` lleva el estilo dentro. Al abrirlo en eXeLearning, el programa ofrece instalarlo. Después se sustituye el contenido del ejemplo por el propio, o se aplica el estilo, ya instalado, a otro proyecto.
 
 **Instalar solo el estilo.** Se descarga `android.zip` y, en eXeLearning, se importa desde el panel de estilos, en la pestaña de estilos importados.
 
@@ -50,6 +50,7 @@ En LaTeX, con `\( … \)` dentro del texto y `\[ … \]` en línea aparte, y «A
 |---|---|
 | `theme/` | El estilo: `config.xml`, `style.css`, `style.js`, la miniatura y la tipografía (`fonts/`). Los iconos de las cajas son los de eXeLearning |
 | `content.xml`, `index.html`, `html/`, `libs/`, `idevices/`, `content/`, `search_index.js` | El ejemplo, guardado por el editor de eXeLearning y exportado por su orden de línea |
+| `edit-in-exelearning.js` | «Editar en eXeLearning» del ejemplo publicado; no forma parte del estilo |
 | `scripts/estilo.py` | Lo propio de este estilo en el ejemplo común: presentación, cómo moverse, clases y créditos |
 | `scripts/comprobar-navegador.cjs` | Recorre el ejemplo en el navegador: móvil dibujado, navegación, índice, búsqueda, giro, actividades y móvil de verdad |
 | `docs/adr/` | Registro de decisiones del estilo |

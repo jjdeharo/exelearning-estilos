@@ -60,6 +60,8 @@ for pagina in [raiz / "index.html", *sorted((raiz / "html").glob("*.html"))]:
         con_formulas += 1
         assert "exe_math/tex-mml-svg.js" in codigo, f"{pagina.name} tiene fórmulas y no carga MathJax"
 assert con_formulas >= 10, "Las fórmulas del ejemplo están en LaTeX"
+if (raiz / "edit-in-exelearning.js").is_file():
+    assert "edit-in-exelearning.js" in (raiz / "index.html").read_text(), "El ejemplo enlaza «Editar en eXeLearning»"
 
 with zipfile.ZipFile(raiz / f"dist/{nombre_estilo}.zip") as paquete:
     nombres = set(paquete.namelist())
@@ -68,6 +70,8 @@ with zipfile.ZipFile(raiz / f"dist/{nombre_estilo}.zip") as paquete:
     for fuente in re.findall(r"url\((fonts/[^)]+)\)", paquete.read("style.css").decode()):
         assert fuente in nombres, f"Falta {fuente} en el paquete del estilo"
     assert not any(n.startswith("icons/") for n in nombres), "Los iconos son los de eXeLearning, no copias"
+    estilo_js = paquete.read("style.js") + paquete.read("style.css")
+    assert b"edit-in-exelearning" not in estilo_js and b"static.exelearning.dev" not in estilo_js, "El enlace para editar no va en el estilo"
     assert not any(n.startswith("theme/") for n in nombres), "El ZIP lleva el estilo en la raíz"
 with zipfile.ZipFile(raiz / "dist/ecuaciones-segundo-grado.elpx") as paquete:
     nombres = set(paquete.namelist())

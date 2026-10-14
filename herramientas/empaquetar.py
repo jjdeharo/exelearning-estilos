@@ -26,6 +26,14 @@ with zipfile.ZipFile(dist / f"{nombre_estilo}.zip", "w", zipfile.ZIP_DEFLATED) a
     for archivo in sorted(estilo.rglob("*")):
         if archivo.is_file() and not archivo.name.startswith("."):
             paquete.write(archivo, archivo.relative_to(estilo))
+# «Editar en eXeLearning» es solo del ejemplo publicado, nunca del estilo: si la carpeta
+# trae edit-in-exelearning.js, se enlaza desde cada página del ejemplo.
+if (raiz / "edit-in-exelearning.js").is_file():
+    for pagina in [raiz / "index.html", *(raiz / "html").glob("*.html")]:
+        codigo = pagina.read_text()
+        if "edit-in-exelearning.js" not in codigo:
+            prefijo = "" if pagina.parent == raiz else "../"
+            pagina.write_text(codigo.replace("</head>", f'<script src="{prefijo}edit-in-exelearning.js" defer></script>\n</head>', 1))
 archivos = [raiz / nombre for nombre in ("index.html", "content.xml", "content.dtd", "search_index.js", "screenshot.png")]
 for carpeta in ("theme", "content", "html", "idevices", "libs"):
     archivos.extend(archivo for archivo in (raiz / carpeta).rglob("*") if archivo.is_file() and not archivo.name.startswith("."))
