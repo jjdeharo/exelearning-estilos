@@ -6,7 +6,7 @@ El ejemplo que lo acompaña, **«Ecuaciones de segundo grado»**, tiene 13 pági
 
 ![Estilo Consola de eXeLearning](captura.png)
 
-[Ejemplo publicado](https://jjdeharo.github.io/exelearning-estilos/consola/) · [Descargar el estilo](https://jjdeharo.github.io/exelearning-estilos/consola/descargas/consola.zip) · [Descargar el ejemplo](https://jjdeharo.github.io/exelearning-estilos/consola/descargas/ecuaciones-segundo-grado.elpx) · [Abrir el ejemplo en eXeLearning en línea](https://static.exelearning.dev/?url=https://jjdeharo.github.io/exelearning-estilos/consola/descargas/ecuaciones-segundo-grado.elpx)
+[Ejemplo publicado](https://jjdeharo.github.io/exelearning-estilos/consola/) · [Descargar el estilo](https://jjdeharo.github.io/exelearning-estilos/consola/descargas/consola.zip) · [Descargar el ejemplo](https://jjdeharo.github.io/exelearning-estilos/consola/descargas/ecuaciones-segundo-grado.elpx)
 
 ## Cómo usarlo
 
@@ -53,14 +53,13 @@ Las fórmulas se escriben en LaTeX, con `\( … \)` dentro del texto y `\[ … \
 
 ## Organización del repositorio
 
-Esta carpeta es una de las del repositorio [exelearning-estilos](../README.md). Su raíz es el ejemplo exportado y descomprimido: se publica tal cual en GitHub Pages, con los paquetes en `descargas/`, y se puede abrir en eXeLearning.
+Esta carpeta es una de las del repositorio [exelearning-estilos](../README.md). Su raíz es el ejemplo exportado y descomprimido: se publica tal cual en GitHub Pages, con los paquetes en `descargas/`, y su `.elpx` se puede abrir en eXeLearning.
 
 | Ruta | Qué es |
 |---|---|
 | `theme/` | El estilo: `config.xml`, `style.css`, `style.js`, la miniatura, la tipografía (`fonts/`) y los iconos de los iDevices (`icons/`) |
 | `content.xml`, `content.dtd` | El proyecto de eXeLearning del ejemplo |
 | `index.html`, `html/`, `libs/`, `idevices/`, `content/`, `search_index.js` | El ejemplo exportado por eXeLearning |
-| `edit-in-exelearning.js` | Enlace «Editar en eXeLearning» del ejemplo publicado; no forma parte del estilo |
 | `scripts/ejemplo.py` | El contenido del ejemplo: páginas, cajas, fórmulas y actividades |
 | `scripts/construir_ejemplo.py` | Escribe `content.xml` y exporta el ejemplo con la orden de línea de eXeLearning |
 | `scripts/mathml.cjs` | Añade el MathML de cada fórmula para los lectores de pantalla |

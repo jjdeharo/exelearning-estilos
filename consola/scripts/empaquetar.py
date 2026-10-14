@@ -4,7 +4,6 @@
 
 - dist/consola.zip: el contenido de theme/, para importarlo en eXeLearning.
 - dist/ecuaciones-segundo-grado.elpx: el ejemplo, con el estilo dentro.
-También añade al HTML del ejemplo el enlace «Editar en eXeLearning».
 """
 from pathlib import Path
 import json
@@ -24,12 +23,6 @@ with zipfile.ZipFile(dist / "consola.zip", "w", zipfile.ZIP_DEFLATED) as paquete
     for archivo in sorted(estilo.rglob("*")):
         if archivo.is_file() and not archivo.name.startswith("."):
             paquete.write(archivo, archivo.relative_to(estilo))
-# El enlace «Editar en eXeLearning» es solo del ejemplo publicado, nunca del estilo.
-for pagina in [raiz / "index.html", *(raiz / "html").glob("*.html")]:
-    codigo = pagina.read_text()
-    if "edit-in-exelearning.js" not in codigo:
-        prefijo = "" if pagina.parent == raiz else "../"
-        pagina.write_text(codigo.replace("</head>", f'<script src="{prefijo}edit-in-exelearning.js" defer></script>\n</head>', 1))
 archivos = [raiz / nombre for nombre in ("index.html", "content.xml", "content.dtd", "search_index.js", "screenshot.png")]
 for carpeta in ("theme", "content", "html", "idevices", "libs"):
     archivos.extend(archivo for archivo in (raiz / carpeta).rglob("*") if archivo.is_file() and not archivo.name.startswith("."))

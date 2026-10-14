@@ -9,7 +9,6 @@ Vale para cualquier asistente (Claude Code, Codex, Antigravity u otro). Lo enlaz
 - La terminal del final de cada página (`construirTerminal` en `style.js`) admite `ls`, `cd`, `grep` y `help`, con mensajes en los cinco idiomas (`MENSAJES`). El tabulador solo completa con la línea escrita: vacía, deja pasar el foco.
 - Sin JavaScript, en el editor o al imprimir, el contenido se lee como una página normal.
 - El contenido del ejemplo está en `scripts/ejemplo.py`. `scripts/construir_ejemplo.py /ruta/a/exelearning` escribe `content.xml`, exporta con la orden de línea de eXeLearning (`bun dist/cli.js elp:export`) y añade el MathML de las fórmulas (`scripts/mathml.cjs`). Después, `python3 scripts/empaquetar.py`.
-- El enlace «Editar en eXeLearning» es solo del ejemplo publicado: vive en `edit-in-exelearning.js` y `empaquetar.py` lo enlaza en el HTML. Nunca en `theme/`.
 - Validar con `python3 scripts/comprobar.py`, `scripts/comprobar-navegador.cjs` en chromium, firefox y webkit, y `scripts/accesibilidad.cjs` (ver README). Las cuentas del ejemplo se comprueban antes de cambiarlas.
 - Licencias: estilo y scripts AGPL-3.0-or-later (línea SPDX al inicio de cada archivo de código); ejemplo CC BY-SA 4.0; DejaVu, licencia de Bitstream Vera; iconos Apache 2.0.
 - Cada decisión, en `docs/adr/`, en castellano.
