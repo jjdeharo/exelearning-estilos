@@ -865,9 +865,18 @@ body#tinymce code {
     gap: .25rem;
 }
 
+.and-estado-iconos {
+    align-items: center;
+}
+
 .and-estado-iconos svg {
     width: 1rem;
     height: 1rem;
+}
+
+.and-porcentaje {
+    margin-left: .125rem;
+    font-size: .75rem;
 }
 
 /* Barra superior: menú, nombre del recurso y búsqueda. */
@@ -1180,7 +1189,9 @@ body#tinymce code {
 }
 
 .and-camara,
-.and-girar {
+.and-girar,
+.and-encendido,
+.and-reposo {
     display: none;
 }
 
@@ -1220,18 +1231,49 @@ body#tinymce code {
         box-shadow: 0 0 0 .125rem #3b3d40, 0 1.5rem 3rem rgba(0, 0, 0, .35);
     }
 
-    .and-movil::before,
+    /* El botón de volumen, solo dibujado. */
     .and-movil::after {
         content: "";
         position: absolute;
+        top: 33%;
         right: -.3rem;
         width: .25rem;
+        height: 7rem;
         border-radius: 0 .25rem .25rem 0;
         background: #3b3d40;
     }
 
-    .and-movil::before { top: 18%; height: 4.5rem; }
-    .and-movil::after { top: 33%; height: 7rem; }
+    /* El botón de encendido, que sí funciona: apaga y enciende la pantalla. */
+    .and-encendido {
+        position: absolute;
+        top: 18%;
+        right: -.3rem;
+        z-index: 2;
+        display: block;
+        width: .25rem;
+        height: 4.5rem;
+        padding: 0;
+        border: 0;
+        border-radius: 0 .25rem .25rem 0;
+        background: #3b3d40;
+        cursor: pointer;
+    }
+
+    /* Más fácil de pulsar que de ver: el área táctil sobresale. */
+    .and-encendido::before {
+        content: "";
+        position: absolute;
+        inset: -.5rem -.75rem -.5rem -.25rem;
+    }
+
+    .and-encendido:hover {
+        background: var(--md-primary);
+    }
+
+    .and-encendido:focus-visible {
+        outline: .1875rem solid var(--md-primary);
+        outline-offset: .25rem;
+    }
 
     .and-js .exe-web-site .and-movil .exe-content {
         overflow: hidden;
@@ -1298,7 +1340,7 @@ body#tinymce code {
         position: absolute;
         top: 1.25rem;
         left: 50%;
-        z-index: 40;
+        z-index: 50;
         display: block;
         width: .875rem;
         height: .875rem;
@@ -1306,6 +1348,65 @@ body#tinymce code {
         border-radius: 50%;
         background: #0b0c0d;
         box-shadow: inset 0 0 0 .1875rem #1f2124;
+    }
+
+    /* Pantalla apagada: negra, con la hora, la fecha y la batería, como la pantalla
+       siempre activa de Android. Se enciende al tocarla. */
+    .and-movil .and-reposo {
+        position: absolute;
+        inset: 0;
+        z-index: 45;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        padding: 0;
+        border: 0;
+        border-radius: inherit;
+        background: #000;
+        color: #cfd3cf;
+        font-family: var(--and-letra);
+        cursor: pointer;
+    }
+
+    .and-movil .and-reposo[hidden] {
+        display: none;
+    }
+
+    .and-reposo-hora {
+        font-size: 4.5rem;
+        font-weight: 400;
+        line-height: 1;
+        letter-spacing: -.02em;
+    }
+
+    .and-reposo-fecha {
+        font-size: 1rem;
+    }
+
+    .and-reposo-bateria {
+        font-size: .875rem;
+        color: #8e938e;
+    }
+
+    .and-horizontal .and-reposo-hora {
+        font-size: 6rem;
+    }
+
+    .and-reposo:focus-visible {
+        outline: .1875rem solid var(--md-primary);
+        outline-offset: -.5rem;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .and-movil .and-reposo {
+            animation: and-apagar .3s ease-out;
+        }
+    }
+
+    @keyframes and-apagar {
+        from { opacity: 0; }
     }
 
     /* Girar: un botón flotante de Material, fuera del móvil. */
@@ -1338,17 +1439,20 @@ body#tinymce code {
         height: calc(var(--ancho) * 9 / 19.5);
     }
 
-    .and-horizontal .and-movil::before,
-    .and-horizontal .and-movil::after {
+    .and-horizontal .and-movil::after,
+    .and-horizontal .and-encendido {
         top: -.3rem;
         right: auto;
-        width: auto;
         height: .25rem;
         border-radius: .25rem .25rem 0 0;
     }
 
-    .and-horizontal .and-movil::before { left: 18%; width: 4.5rem; }
+    .and-horizontal .and-encendido { left: 18%; width: 4.5rem; }
     .and-horizontal .and-movil::after { left: 33%; width: 7rem; }
+
+    .and-horizontal .and-encendido::before {
+        inset: -.75rem -.5rem -.25rem -.5rem;
+    }
 
     .and-horizontal .and-movil .and-camara {
         top: 50%;

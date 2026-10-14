@@ -98,6 +98,24 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
         await pagina.locator('.and-girar').click();
         await pagina.waitForFunction(() => !document.documentElement.classList.contains('and-horizontal'));
 
+        // El botón de encendido apaga la pantalla y deja la hora; tocarla la enciende.
+        await pagina.locator('.and-encendido').click();
+        await pagina.locator('.and-reposo').waitFor({ state: 'visible' });
+        assert.match(await pagina.locator('.and-reposo-hora').innerText(), /^\d\d:\d\d$/, 'La hora, con la pantalla apagada');
+        assert.equal(await pagina.locator('.and-contenido').evaluate(nodo => nodo.inert), true, 'Con la pantalla apagada no se puede usar la página');
+        await pagina.locator('.and-reposo').click();
+        await pagina.locator('.and-reposo').waitFor({ state: 'hidden' });
+        assert.equal(await pagina.locator('.and-contenido').evaluate(nodo => nodo.inert), false, 'Encendida, se vuelve a usar');
+        await pagina.locator('.and-encendido').click();
+        await pagina.locator('.and-encendido').click();
+        await pagina.locator('.and-reposo').waitFor({ state: 'hidden' });
+
+        // El wifi refleja la conexión del dispositivo.
+        await contexto.setOffline(true);
+        await pagina.waitForFunction(() => document.querySelector('.and-wifi').classList.contains('and-sin-red'));
+        await contexto.setOffline(false);
+        await pagina.waitForFunction(() => !document.querySelector('.and-wifi').classList.contains('and-sin-red'));
+
         // «Ver solución» despliega la resolución y cambia de rótulo.
         await abrir(urls.find(url => url.endsWith('ejercicios-resueltos.html')));
         const boton = pagina.locator('.feedbacktooglebutton').first();
@@ -175,7 +193,7 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
         assert.equal(await pagina.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'Cabe en un móvil en horizontal');
         assert.equal(await pagina.locator('.and-movil').evaluate(movil => getComputedStyle(movil).display), 'contents', 'Sin marco en un móvil en horizontal');
         assert.deepEqual(errores, [], errores.join('\n'));
-        console.log(`CORRECTO (${process.argv[3] || 'chromium'}): ${urls.length} páginas, móvil dibujado, barra de navegación, índice, búsqueda, giro, soluciones, ordenar, test, MathJax y móvil de 412, 360 y 320 px.`);
+        console.log(`CORRECTO (${process.argv[3] || 'chromium'}): ${urls.length} páginas, móvil dibujado, barra de navegación, índice, búsqueda, giro, encendido, wifi, soluciones, ordenar, test, MathJax y móvil de 412, 360 y 320 px.`);
     } finally {
         await navegador.close();
     }

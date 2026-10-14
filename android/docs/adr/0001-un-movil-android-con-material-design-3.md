@@ -17,6 +17,8 @@ Juan José de Haro pidió un segundo estilo, con el mismo ejemplo que Consola, q
 - **Iconos**: los de las cajas son los de eXeLearning (Material Symbols, `mi-…`), en el verde del estilo. Los de la interfaz se dibujan con trazos sencillos en `style.js`, sin copiar ningún juego de iconos.
 - **Clases de caja**: `md-ok`, `md-info`, `md-warn`, `md-error` (contenedores de Material) y `md-highlight` (tarjeta enmarcada).
 
+- **Barra de estado y botón de encendido que funcionan** (pedido por Juan José de Haro, «solo si se te ocurre algo con sentido»): la hora; el wifi según `navigator.onLine` y sus eventos; la cobertura según `navigator.connection.effectiveType`, si existe; la batería con `navigator.getBattery()`, que solo dan Chrome y Edge (en los demás se queda llena). Nada de eso sale del navegador. El botón de encendido del lateral apaga la pantalla y deja la hora, la fecha y la batería, como la pantalla siempre activa de Android; mientras, el resto de la pantalla es inerte. Los botones de volumen siguen siendo dibujo: no hay sonido que subir o bajar, y darles otro uso confundiría.
+
 ## Alternativas descartadas
 
 - **Botón flotante «Siguiente» además de la barra**: duplicaba un destino.
