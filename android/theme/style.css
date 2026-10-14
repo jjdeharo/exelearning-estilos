@@ -1433,8 +1433,9 @@ body#tinymce code {
 
     /* En horizontal: 19,5:9, la cámara a la izquierda y los botones arriba. */
     .and-horizontal .and-movil {
-        /* Todo el ancho posible, sin pasar del alto que queda sobre el botón. */
-        --ancho: min(calc(100vw - 2 * var(--margen)), calc((100dvh - 2 * var(--margen) - var(--boton)) * 19.5 / 9));
+        /* Girado, el móvil mide lo mismo que en vertical, como uno de verdad: el lado
+           largo es la altura que tendría en vertical. Si la ventana es estrecha, cabe en ella. */
+        --ancho: min(54rem, calc(100dvh - 2 * var(--margen)), calc(100vw - 2 * var(--margen)));
         width: var(--ancho);
         height: calc(var(--ancho) * 9 / 19.5);
     }
