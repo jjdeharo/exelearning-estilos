@@ -20,7 +20,7 @@ El ejemplo es el mismo que el del estilo [Consola](../consola/): **«Ecuaciones 
 - **Índice en un cajón** lateral, con la página abierta resaltada. Se cierra con Escape, con su botón o pulsando fuera.
 - **Tarjetas**: cada caja es una tarjeta de Material, con el icono en verde y el botón de plegar. Las actividades van en tarjetas rellenas.
 - **Barra de navegación** abajo, con Anterior, Inicio, Índice y Siguiente. En horizontal pasa a ser un raíl a la izquierda, como en Android, para dejar alto a la página.
-- **El móvil dibujado**, en pantallas de al menos 800 × 608 px: cuerpo, cámara, botones laterales, barra de estado con la hora y barra de gestos. El botón «Girar» lo pone en horizontal o en vertical, con una animación (sin ella si el sistema pide reducir el movimiento), y la orientación elegida se recuerda en el navegador.
+- **El móvil dibujado**, en pantallas de al menos 800 × 608 px: cuerpo, cámara, botones laterales, barra de estado con la hora y barra de gestos. El botón «Girar», junto al móvil, lo pone en horizontal (a todo el ancho de la pantalla, con un margen alrededor) o en vertical, con una animación (sin ella si el sistema pide reducir el movimiento), y la orientación elegida se recuerda en el navegador.
 - **Tema claro u oscuro**, el que tenga el sistema, con un esquema de color de Material Design 3 a partir del verde de Android.
 - **Sin JavaScript o al imprimir**, el contenido se lee como una página normal.
 

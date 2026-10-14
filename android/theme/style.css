@@ -1185,19 +1185,30 @@ body#tinymce code {
 }
 
 @media screen and (min-width: 50rem) and (min-height: 38rem) {
+    /* El escritorio: el móvil en el centro, con un margen claro alrededor, y el botón
+       «Girar» a su lado (en vertical) o debajo (en horizontal). */
     .and-js body.exe-web-site {
+        --margen: 2.5rem;
+        --boton: 5rem;
         display: flex;
         align-items: center;
         justify-content: center;
+        gap: 1.5rem;
+        box-sizing: border-box;
         min-height: 100vh;
         min-height: 100dvh;
+        padding: var(--margen);
         overflow: hidden;
         background: var(--and-escritorio);
     }
 
+    .and-js.and-horizontal body.exe-web-site {
+        flex-direction: column;
+    }
+
     /* El cuerpo del teléfono: proporción 9:19,5, con el borde y los botones laterales. */
     .and-movil {
-        --alto: min(54rem, calc(100dvh - 3rem));
+        --alto: min(54rem, calc(100dvh - 2 * var(--margen)));
         position: relative;
         display: block;
         flex: 0 0 auto;
@@ -1299,11 +1310,9 @@ body#tinymce code {
 
     /* Girar: un botón flotante de Material, fuera del móvil. */
     .and-girar {
-        position: fixed;
-        right: 2rem;
-        bottom: 2rem;
         z-index: 50;
         display: inline-flex;
+        flex: 0 0 auto;
         align-items: center;
         gap: .75rem;
         min-height: 3.5rem;
@@ -1323,7 +1332,8 @@ body#tinymce code {
 
     /* En horizontal: 19,5:9, la cámara a la izquierda y los botones arriba. */
     .and-horizontal .and-movil {
-        --ancho: min(70rem, calc(100vw - 16rem), calc((100dvh - 3rem) * 19.5 / 9));
+        /* Todo el ancho posible, sin pasar del alto que queda sobre el botón. */
+        --ancho: min(calc(100vw - 2 * var(--margen)), calc((100dvh - 2 * var(--margen) - var(--boton)) * 19.5 / 9));
         width: var(--ancho);
         height: calc(var(--ancho) * 9 / 19.5);
     }
