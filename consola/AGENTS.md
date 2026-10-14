@@ -1,6 +1,6 @@
 # Consola: instrucciones para agentes
 
-Vale para cualquier asistente (Claude Code, Codex, Antigravity u otro). `CLAUDE.md` es un enlace a este archivo.
+Vale para cualquier asistente (Claude Code, Codex, Antigravity u otro). Lo enlaza el `AGENTS.md` de la raíz del repositorio.
 
 - `theme/` es la fuente del estilo (nombre interno `consola`); la raíz es el ejemplo exportado y descomprimido.
 - No modificar eXeLearning para arreglar el estilo. Si el fallo es de eXeLearning, se comprueba, se anota en `docs/adr/` y se prepara el aviso para sus autores.

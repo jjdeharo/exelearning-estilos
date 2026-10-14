@@ -435,8 +435,8 @@
         campo.setAttribute('autocapitalize', 'off');
         campo.setAttribute('spellcheck', 'false');
         campo.setAttribute('enterkeyhint', 'go');
-        // Con un espacio de marcador, :placeholder-shown dice si el campo está vacío.
-        campo.placeholder = ' ';
+        // «help» como ejemplo, en gris: no está escrito y desaparece al escribir.
+        campo.placeholder = 'help';
         var cursor = crear('span', 'cli-cursor');
         cursor.setAttribute('aria-hidden', 'true');
         entrada.append(cursor, campo);

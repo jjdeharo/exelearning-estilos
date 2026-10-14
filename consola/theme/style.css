@@ -1013,7 +1013,7 @@ body#tinymce pre {
 }
 
 .exe-content .cli-prompt-texto {
-    margin: 0;
+    margin: 0 1ch 0 0;
     overflow-wrap: anywhere;
 }
 
@@ -1035,6 +1035,16 @@ body#tinymce pre {
     font: inherit;
     caret-color: var(--cli-verde);
     outline: none;
+}
+
+.exe-content .cli-espera .cli-campo::placeholder {
+    color: var(--cli-apagado);
+    opacity: 1;
+}
+
+/* Sin el foco, el ejemplo se corre un carácter para dejar sitio al cursor de bloque. */
+.exe-content .cli-espera .cli-campo:placeholder-shown:not(:focus) {
+    padding-left: 1.5ch;
 }
 
 .cli-entrada .cli-cursor {
