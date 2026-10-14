@@ -20,9 +20,11 @@ El ejemplo es el mismo que el del estilo [Consola](../consola/): **«Ecuaciones 
 - **Índice en un cajón** lateral, con la página abierta resaltada. Se cierra con Escape, con su botón o pulsando fuera.
 - **Tarjetas**: cada caja es una tarjeta de Material, con el icono en verde y el botón de plegar. Las actividades van en tarjetas rellenas.
 - **Barra de navegación** abajo, con Anterior, Inicio, Índice y Siguiente. En horizontal pasa a ser un raíl a la izquierda, como en Android, para dejar alto a la página.
-- **El móvil dibujado**, en pantallas de al menos 800 × 608 px: cuerpo, cámara, botones laterales, barra de estado y barra de gestos.
-- **La barra de estado es real**: la hora; el wifi, tachado si no hay conexión; la cobertura según la velocidad de la conexión, si el navegador la da; y la batería con su nivel y si se está cargando, en los navegadores que la dan (Chrome, Edge; en los demás, llena).
-- **El botón de encendido**, el de arriba del lateral, apaga la pantalla y deja la hora, la fecha y la batería, como la pantalla siempre activa de Android. Se enciende pulsándolo otra vez o tocando la pantalla. El botón «Girar», junto al móvil, lo pone en horizontal o en vertical, con el mismo tamaño, como un móvil de verdad, con una animación (sin ella si el sistema pide reducir el movimiento), y la orientación elegida se recuerda en el navegador.
+- **El móvil dibujado**, en pantallas de al menos 800 × 608 px: cuerpo, cámara, barra de estado y barra de gestos. Todos sus botones funcionan:
+  - **Girar**: el icono de la esquina de la barra de gestos, como la sugerencia de giro de Android. Pone el móvil en horizontal o en vertical, con el mismo tamaño, y la orientación se recuerda.
+  - **Encendido**, el botón verde del lateral: apaga la pantalla y deja la hora, la fecha y el progreso, como la pantalla siempre activa de Android. Se enciende pulsándolo otra vez o tocando la pantalla.
+  - **Volumen**, los dos botones de debajo: agrandan y reducen la letra de la página, con un panel como el del volumen de Android. El tamaño se recuerda, también al verlo en un móvil.
+- **La barra de estado es real**: la hora; el wifi, tachado si no hay conexión; la cobertura según la velocidad de la conexión, si el navegador la da; y la **batería, que es el progreso de lectura**: se carga con las páginas vistas, que se recuerdan en el dispositivo, y al verlas todas sale el rayo de carga completa. Al pasar el ratón explica cuántas se han visto.
 - **Tema claro u oscuro**, el que tenga el sistema, con un esquema de color de Material Design 3 a partir del verde de Android.
 - **Sin JavaScript o al imprimir**, el contenido se lee como una página normal.
 

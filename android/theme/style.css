@@ -874,6 +874,13 @@ body#tinymce code {
     height: 1rem;
 }
 
+.and-progreso {
+    display: inline-flex;
+    align-items: center;
+    gap: .125rem;
+    cursor: help;
+}
+
 .and-porcentaje {
     margin-left: .125rem;
     font-size: .75rem;
@@ -1001,7 +1008,11 @@ body#tinymce code {
     clip: auto;
 }
 
-/* Contenido: la página entre las dos barras. */
+/* Contenido: la página entre las dos barras. Su tamaño lo cambian los botones de volumen. */
+.and-contenido > * {
+    zoom: var(--and-escala, 1);
+}
+
 .and-contenido {
     flex: 1 0 auto;
     padding: .5rem 1rem 1.5rem;
@@ -1191,20 +1202,19 @@ body#tinymce code {
 .and-camara,
 .and-girar,
 .and-encendido,
+.and-volumen,
+.and-panel-letra,
 .and-reposo {
     display: none;
 }
 
 @media screen and (min-width: 50rem) and (min-height: 38rem) {
-    /* El escritorio: el móvil en el centro, con un margen claro alrededor, y el botón
-       «Girar» a su lado (en vertical) o debajo (en horizontal). */
+    /* El escritorio: el móvil en el centro, con un margen claro alrededor. */
     .and-js body.exe-web-site {
         --margen: 2.5rem;
-        --boton: 5rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 1.5rem;
         box-sizing: border-box;
         min-height: 100vh;
         min-height: 100dvh;
@@ -1213,9 +1223,6 @@ body#tinymce code {
         background: var(--and-escritorio);
     }
 
-    .and-js.and-horizontal body.exe-web-site {
-        flex-direction: column;
-    }
 
     /* El cuerpo del teléfono: proporción 9:19,5, con el borde y los botones laterales. */
     .and-movil {
@@ -1231,46 +1238,57 @@ body#tinymce code {
         box-shadow: 0 0 0 .125rem #3b3d40, 0 1.5rem 3rem rgba(0, 0, 0, .35);
     }
 
-    /* El botón de volumen, solo dibujado. */
-    .and-movil::after {
-        content: "";
+    /* Botones laterales: el de encendido, de color como en los Pixel, y los dos de volumen,
+       que cambian el tamaño de la letra. Funcionan los tres. */
+    .and-encendido,
+    .and-volumen {
         position: absolute;
-        top: 33%;
-        right: -.3rem;
-        width: .25rem;
-        height: 7rem;
-        border-radius: 0 .25rem .25rem 0;
-        background: #3b3d40;
-    }
-
-    /* El botón de encendido, que sí funciona: apaga y enciende la pantalla. */
-    .and-encendido {
-        position: absolute;
-        top: 18%;
-        right: -.3rem;
+        right: -.375rem;
         z-index: 2;
         display: block;
-        width: .25rem;
-        height: 4.5rem;
+        width: .375rem;
         padding: 0;
         border: 0;
         border-radius: 0 .25rem .25rem 0;
-        background: #3b3d40;
         cursor: pointer;
     }
 
-    /* Más fácil de pulsar que de ver: el área táctil sobresale. */
-    .and-encendido::before {
-        content: "";
-        position: absolute;
-        inset: -.5rem -.75rem -.5rem -.25rem;
-    }
-
-    .and-encendido:hover {
+    .and-encendido {
+        top: 16%;
+        height: 3.5rem;
         background: var(--md-primary);
     }
 
-    .and-encendido:focus-visible {
+    .and-volumen {
+        height: 3rem;
+        background: #55585c;
+    }
+
+    .and-subir { top: calc(16% + 4.75rem); }
+    .and-bajar { top: calc(16% + 7.875rem); }
+
+    /* Más fácil de pulsar que de ver: el área táctil sobresale. */
+    .and-encendido::before,
+    .and-volumen::before {
+        content: "";
+        position: absolute;
+        inset: -.25rem -.75rem -.25rem -.25rem;
+    }
+
+    .and-volumen::before {
+        inset: 0 -.75rem 0 -.25rem;
+    }
+
+    .and-encendido:hover { filter: brightness(1.25); }
+    .and-volumen:hover { background: #7a7e83; }
+
+    .and-volumen:disabled {
+        cursor: default;
+        filter: none;
+    }
+
+    .and-encendido:focus-visible,
+    .and-volumen:focus-visible {
         outline: .1875rem solid var(--md-primary);
         outline-offset: .25rem;
     }
@@ -1309,12 +1327,37 @@ body#tinymce code {
     }
 
     .and-movil .and-gestos {
+        position: relative;
         display: flex;
         flex: 0 0 auto;
         align-items: center;
         justify-content: center;
-        height: 1.5rem;
+        height: 2rem;
         background: var(--md-surface-container);
+    }
+
+    /* La sugerencia de giro de Android: un icono redondo en la esquina de la barra de gestos. */
+    .and-movil .and-girar {
+        position: absolute;
+        top: 50%;
+        right: 2rem;
+        display: inline-flex;
+        width: 2.25rem;
+        height: 2.25rem;
+        margin-top: -1.125rem;
+        background: var(--md-surface-container-highest);
+        color: var(--md-on-surface);
+    }
+
+    .and-movil .and-girar svg {
+        width: 1.375rem;
+        height: 1.375rem;
+        stroke-width: 1.75;
+    }
+
+    .and-movil .and-girar:hover {
+        background: var(--md-secondary-container);
+        color: var(--md-on-secondary-container);
     }
 
     .and-movil .and-gestos::before {
@@ -1409,26 +1452,70 @@ body#tinymce code {
         from { opacity: 0; }
     }
 
-    /* Girar: un botón flotante de Material, fuera del móvil. */
-    .and-girar {
-        z-index: 50;
-        display: inline-flex;
-        flex: 0 0 auto;
+    /* El panel del tamaño de letra, como el del volumen de Android, junto a los botones. */
+    .and-movil .and-panel-letra {
+        position: absolute;
+        top: 18%;
+        right: .75rem;
+        z-index: 35;
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: .75rem;
-        min-height: 3.5rem;
-        padding: 0 1.25rem 0 1rem;
-        border: 0;
-        border-radius: 1rem;
-        background: var(--md-primary-container);
-        color: var(--md-on-primary-container);
-        font: 500 .875rem/1.25rem var(--and-letra);
+        gap: .5rem;
+        width: 3.25rem;
+        padding: .75rem 0;
+        border-radius: 1.625rem;
+        background: var(--md-surface-container-high);
+        color: var(--md-on-surface);
         box-shadow: var(--and-sombra-3);
-        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
     }
 
-    .and-girar:hover {
-        filter: brightness(1.05);
+    .and-movil .and-panel-letra.and-visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .and-movil .and-panel-letra {
+            transition: opacity .2s, visibility 0s .2s;
+        }
+
+        .and-movil .and-panel-letra.and-visible {
+            transition: opacity .2s;
+        }
+    }
+
+    .and-panel-pista {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+        width: 2.25rem;
+        height: 8rem;
+        border-radius: 1.125rem;
+        background: var(--md-secondary-container);
+    }
+
+    .and-panel-nivel {
+        width: 100%;
+        border-radius: 1.125rem;
+        background: var(--md-primary);
+    }
+
+    .and-panel-icono {
+        font-weight: 500;
+        line-height: 1;
+    }
+
+    .and-panel-texto {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
     }
 
     /* En horizontal: 19,5:9, la cámara a la izquierda y los botones arriba. */
@@ -1440,19 +1527,20 @@ body#tinymce code {
         height: calc(var(--ancho) * 9 / 19.5);
     }
 
-    .and-horizontal .and-movil::after,
-    .and-horizontal .and-encendido {
-        top: -.3rem;
+    .and-horizontal :is(.and-encendido, .and-volumen) {
+        top: -.375rem;
         right: auto;
-        height: .25rem;
+        height: .375rem;
         border-radius: .25rem .25rem 0 0;
     }
 
-    .and-horizontal .and-encendido { left: 18%; width: 4.5rem; }
-    .and-horizontal .and-movil::after { left: 33%; width: 7rem; }
+    .and-horizontal .and-encendido { left: 16%; width: 3.5rem; }
+    .and-horizontal .and-volumen { width: 3rem; }
+    .and-horizontal .and-subir { left: calc(16% + 4.75rem); }
+    .and-horizontal .and-bajar { left: calc(16% + 7.875rem); }
 
-    .and-horizontal .and-encendido::before {
-        inset: -.75rem -.5rem -.25rem -.5rem;
+    .and-horizontal :is(.and-encendido, .and-volumen)::before {
+        inset: -.75rem -.25rem -.25rem -.25rem;
     }
 
     .and-horizontal .and-movil .and-camara {

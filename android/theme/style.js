@@ -16,16 +16,19 @@
 
     // La orientación que eligió quien lee se recuerda en su dispositivo.
     var CLAVE_ORIENTACION = 'exe-estilo-android-orientacion';
+    var CLAVE_LETRA = 'exe-estilo-android-letra';
+    // Tamaños de letra, como los de Android: de pequeño a muy grande.
+    var ESCALAS = [0.85, 1, 1.15, 1.3, 1.5, 1.75, 2];
     try {
         if (localStorage.getItem(CLAVE_ORIENTACION) === 'horizontal') raiz.classList.add('and-horizontal');
     } catch (error) { /* Sin almacenamiento, siempre en vertical. */ }
 
     var TEXTOS = {
-        es: { index: 'Índice', home: 'Inicio', previous: 'Anterior', next: 'Siguiente', search: 'Buscar', rotate: 'Girar', rotateLong: 'Girar el móvil', close: 'Cerrar el índice', bar: 'Navegación', power: 'Botón de encendido', powerOff: 'Apagar la pantalla', powerOn: 'Pantalla apagada: púlsala para encenderla' },
-        ca: { index: 'Índex', home: 'Inici', previous: 'Anterior', next: 'Següent', search: 'Cerca', rotate: 'Gira', rotateLong: 'Gira el mòbil', close: 'Tanca l\'índex', bar: 'Navegació', power: 'Botó d\'engegada', powerOff: 'Apaga la pantalla', powerOn: 'Pantalla apagada: prem-la per encendre-la' },
-        gl: { index: 'Índice', home: 'Inicio', previous: 'Anterior', next: 'Seguinte', search: 'Buscar', rotate: 'Xirar', rotateLong: 'Xirar o móbil', close: 'Pechar o índice', bar: 'Navegación', power: 'Botón de acendido', powerOff: 'Apagar a pantalla', powerOn: 'Pantalla apagada: preme nela para acendela' },
-        eu: { index: 'Aurkibidea', home: 'Hasiera', previous: 'Aurrekoa', next: 'Hurrengoa', search: 'Bilatu', rotate: 'Biratu', rotateLong: 'Biratu mugikorra', close: 'Itxi aurkibidea', bar: 'Nabigazioa', power: 'Pizteko botoia', powerOff: 'Itzali pantaila', powerOn: 'Pantaila itzalita: sakatu pizteko' },
-        en: { index: 'Index', home: 'Home', previous: 'Previous', next: 'Next', search: 'Search', rotate: 'Rotate', rotateLong: 'Rotate the phone', close: 'Close the index', bar: 'Navigation', power: 'Power button', powerOff: 'Turn the screen off', powerOn: 'Screen off: tap to turn it on' },
+        es: { index: 'Índice', home: 'Inicio', previous: 'Anterior', next: 'Siguiente', search: 'Buscar', rotate: 'Girar el móvil', close: 'Cerrar el índice', bar: 'Navegación', power: 'Botón de encendido', powerOff: 'Apagar la pantalla', powerOn: 'Pantalla apagada: púlsala para encenderla', volumeUp: 'Subir: letra más grande', volumeDown: 'Bajar: letra más pequeña', textSize: 'Tamaño de letra', seen: 'Has visto %1 de %2 páginas', seenShort: '%1 % visto' },
+        ca: { index: 'Índex', home: 'Inici', previous: 'Anterior', next: 'Següent', search: 'Cerca', rotate: 'Gira el mòbil', close: 'Tanca l\'índex', bar: 'Navegació', power: 'Botó d\'engegada', powerOff: 'Apaga la pantalla', powerOn: 'Pantalla apagada: prem-la per encendre-la', volumeUp: 'Puja: lletra més gran', volumeDown: 'Baixa: lletra més petita', textSize: 'Mida de la lletra', seen: 'Has vist %1 de %2 pàgines', seenShort: '%1 % vist' },
+        gl: { index: 'Índice', home: 'Inicio', previous: 'Anterior', next: 'Seguinte', search: 'Buscar', rotate: 'Xirar o móbil', close: 'Pechar o índice', bar: 'Navegación', power: 'Botón de acendido', powerOff: 'Apagar a pantalla', powerOn: 'Pantalla apagada: preme nela para acendela', volumeUp: 'Subir: letra máis grande', volumeDown: 'Baixar: letra máis pequena', textSize: 'Tamaño da letra', seen: 'Viches %1 de %2 páxinas', seenShort: '%1 % visto' },
+        eu: { index: 'Aurkibidea', home: 'Hasiera', previous: 'Aurrekoa', next: 'Hurrengoa', search: 'Bilatu', rotate: 'Biratu mugikorra', close: 'Itxi aurkibidea', bar: 'Nabigazioa', power: 'Pizteko botoia', powerOff: 'Itzali pantaila', powerOn: 'Pantaila itzalita: sakatu pizteko', volumeUp: 'Igo: letra handiagoa', volumeDown: 'Jaitsi: letra txikiagoa', textSize: 'Letraren tamaina', seen: '%2 orritatik %1 ikusi dituzu', seenShort: '%1 % ikusita' },
+        en: { index: 'Index', home: 'Home', previous: 'Previous', next: 'Next', search: 'Search', rotate: 'Rotate the phone', close: 'Close the index', bar: 'Navigation', power: 'Power button', powerOff: 'Turn the screen off', powerOn: 'Screen off: tap to turn it on', volumeUp: 'Volume up: larger text', volumeDown: 'Volume down: smaller text', textSize: 'Text size', seen: 'You have seen %1 of %2 pages', seenShort: '%1% seen' },
     };
 
     // Iconos propios, dibujados con trazos sencillos: los de eXeLearning son para las cajas.
@@ -37,7 +40,7 @@
         inicio: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/>',
         indice: '<path d="M8 7h12M8 12h12M8 17h12"/><circle cx="4.5" cy="7" r=".6"/><circle cx="4.5" cy="12" r=".6"/><circle cx="4.5" cy="17" r=".6"/>',
         cerrar: '<path d="M6 6l12 12M18 6L6 18"/>',
-        girar: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M2 9a10 10 0 0 1 4-5M2 9l3 .3M2 9l.3-3M22 15a10 10 0 0 1-4 5M22 15l-3-.3M22 15l-.3 3"/>',
+        girar: '<rect x="8.75" y="5.5" width="6.5" height="13" rx="1.4" transform="rotate(45 12 12)"/><path d="M2.5 9.5A10 10 0 0 1 9.5 2.5"/><path d="M9.5 2.5l-2.8.2M9.5 2.5l-1.2 2.5"/><path d="M21.5 14.5a10 10 0 0 1-7 7"/><path d="M14.5 21.5l2.8-.2M14.5 21.5l1.2-2.5"/>',
     };
 
     // Iconos de la barra de estado, que reflejan el dispositivo de quien lee cuando el
@@ -74,6 +77,14 @@
         return (TEXTOS[idioma] || TEXTOS.en)[clave];
     }
 
+    function guardado(clave) {
+        try { return localStorage.getItem(clave); } catch (error) { return null; }
+    }
+
+    function guardar(clave, valor) {
+        try { localStorage.setItem(clave, valor); } catch (error) { /* Sin almacenamiento, no se recuerda. */ }
+    }
+
     function crear(etiqueta, clase, contenido) {
         var nodo = document.createElement(etiqueta);
         if (clase) nodo.className = clase;
@@ -107,8 +118,8 @@
 
     /* ---------- Las piezas de la pantalla ---------- */
 
-    // Barra de estado: la hora, la cobertura, el wifi y la batería. La lee el lector de
-    // pantalla del propio dispositivo, así que aquí es solo visual.
+    // Barra de estado: la hora, la cobertura y el wifi del dispositivo, y la batería, que
+    // es el progreso de lectura. Es visual: el porcentaje se explica al pasar el ratón.
     function construirEstado(pantalla) {
         var estado = crear('div', 'and-estado');
         estado.setAttribute('aria-hidden', 'true');
@@ -118,12 +129,14 @@
         piezas.wifi = crear('span', 'and-icono and-wifi');
         piezas.bateria = crear('span', 'and-icono and-bateria');
         piezas.porcentaje = crear('span', 'and-porcentaje');
-        iconos.append(piezas.senal, piezas.wifi, piezas.porcentaje, piezas.bateria);
+        piezas.progreso = crear('span', 'and-progreso');
+        piezas.progreso.append(piezas.porcentaje, piezas.bateria);
+        iconos.append(piezas.senal, piezas.wifi, piezas.progreso);
         estado.append(piezas.hora, iconos);
         pantalla.prepend(estado);
         actualizarHora();
         setInterval(actualizarHora, 15000);
-        vigilarDispositivo();
+        vigilarRed();
         return estado;
     }
 
@@ -139,14 +152,38 @@
         }
     }
 
-    function vigilarDispositivo() {
-        var estado = { nivel: 1, cargando: false, conocida: false };
-        var pintarBateria = function () {
-            piezas.bateria.innerHTML = dibujo(trazoBateria(estado.nivel, estado.cargando));
-            var texto = estado.conocida ? Math.round(estado.nivel * 100) + ' %' : '';
-            piezas.porcentaje.textContent = texto;
-            if (piezas.reposoBateria) piezas.reposoBateria.textContent = texto;
-        };
+    // La batería se carga con las páginas vistas de este recurso, que se recuerdan en el
+    // dispositivo; al verlas todas, sale el rayo de carga completa.
+    function contarVistas(nav) {
+        var enlaces = nav.querySelectorAll('a[href]');
+        var paginas = [];
+        for (var i = 0; i < enlaces.length; i++) paginas.push(enlaces[i].href.split('#')[0]);
+        // El recurso se identifica por la dirección de su carpeta.
+        var carpeta = paginas.length ? paginas[0].replace(/[^/]*$/, '') : location.href;
+        var clave = 'exe-estilo-android-vistas:' + carpeta;
+        var vistas = [];
+        try { vistas = JSON.parse(guardado(clave) || '[]'); } catch (error) { vistas = []; }
+        var actual = location.href.split('#')[0];
+        var activa = nav.querySelector('a.active');
+        if (activa) actual = activa.href.split('#')[0];
+        if (vistas.indexOf(actual) < 0) vistas.push(actual);
+        vistas = vistas.filter(function (pagina) { return paginas.indexOf(pagina) >= 0; });
+        guardar(clave, JSON.stringify(vistas));
+        return { vistas: vistas.length, total: paginas.length };
+    }
+
+    function pintarProgreso(progreso) {
+        var nivel = progreso.total ? progreso.vistas / progreso.total : 1;
+        var completo = nivel >= 1;
+        var porcentaje = Math.round(nivel * 100);
+        piezas.bateria.innerHTML = dibujo(trazoBateria(nivel, completo));
+        piezas.porcentaje.textContent = porcentaje + ' %';
+        var explicacion = texto('seen').replace('%1', progreso.vistas).replace('%2', progreso.total);
+        piezas.progreso.title = explicacion;
+        if (piezas.reposoBateria) piezas.reposoBateria.textContent = texto('seenShort').replace('%1', porcentaje);
+    }
+
+    function vigilarRed() {
         var pintarRed = function () {
             var conectado = navigator.onLine !== false;
             piezas.wifi.innerHTML = dibujo(trazoWifi(conectado));
@@ -155,25 +192,10 @@
             var barras = { 'slow-2g': 1, '2g': 2, '3g': 3, '4g': 4 }[conexion && conexion.effectiveType] || 4;
             piezas.senal.innerHTML = dibujo(trazoSenal(conectado ? barras : 0));
         };
-        pintarBateria();
         pintarRed();
         window.addEventListener('online', pintarRed);
         window.addEventListener('offline', pintarRed);
         if (navigator.connection && navigator.connection.addEventListener) navigator.connection.addEventListener('change', pintarRed);
-        // La batería, solo en los navegadores que la dan (Chrome, Edge); en los demás, llena.
-        if (navigator.getBattery) {
-            navigator.getBattery().then(function (bateria) {
-                var leer = function () {
-                    estado.nivel = bateria.level;
-                    estado.cargando = bateria.charging;
-                    estado.conocida = true;
-                    pintarBateria();
-                };
-                leer();
-                bateria.addEventListener('levelchange', leer);
-                bateria.addEventListener('chargingchange', leer);
-            }).catch(function () { /* Sin acceso a la batería: se queda llena. */ });
-        }
     }
 
     // Barra superior: el índice, el nombre del recurso y la búsqueda.
@@ -310,11 +332,34 @@
         piezas.reposo.hidden = true;
         pantalla.append(piezas.reposo);
         actualizarHora();
-        piezas.girar = crear('button', 'and-girar');
-        piezas.girar.type = 'button';
-        piezas.girar.title = texto('rotateLong');
-        piezas.girar.append(icono('girar'), crear('span', 'and-girar-texto', texto('rotate')));
-        movil.after(piezas.girar);
+        // Los botones de volumen cambian el tamaño de la letra de la página.
+        piezas.subir = crear('button', 'and-volumen and-subir');
+        piezas.bajar = crear('button', 'and-volumen and-bajar');
+        [[piezas.subir, 'volumeUp'], [piezas.bajar, 'volumeDown']].forEach(function (par) {
+            par[0].type = 'button';
+            par[0].setAttribute('aria-label', texto(par[1]));
+            par[0].title = texto(par[1]);
+            movil.append(par[0]);
+        });
+        // El panel que aparece al pulsarlos, como el del volumen de Android.
+        piezas.panel = crear('div', 'and-panel-letra');
+        piezas.panel.setAttribute('role', 'status');
+        piezas.panelNivel = crear('span', 'and-panel-nivel');
+        var pista = crear('span', 'and-panel-pista');
+        pista.append(piezas.panelNivel);
+        piezas.panelTexto = crear('span', 'and-panel-texto');
+        var letra = crear('span', 'and-panel-icono', 'Aa');
+        letra.setAttribute('aria-hidden', 'true');
+        piezas.panel.append(pista, letra, piezas.panelTexto);
+        pantalla.append(piezas.panel);
+
+        // El icono de girar, abajo a la derecha, como la sugerencia de giro de Android.
+        piezas.girar = botonIcono('girar', texto('rotate'), 'and-girar');
+        var gestos = pantalla.querySelector('.and-gestos');
+        if (gestos) {
+            gestos.removeAttribute('aria-hidden');
+            gestos.append(piezas.girar);
+        }
         piezas.movil = movil;
     }
 
@@ -354,13 +399,40 @@
         actualizarHora();
     }
 
+    function escalaGuardada() {
+        var valor = parseFloat(guardado(CLAVE_LETRA));
+        return ESCALAS.indexOf(valor) >= 0 ? valor : 1;
+    }
+
+    function aplicarLetra(escala, avisar) {
+        piezas.contenido.style.setProperty('--and-escala', escala);
+        raiz.classList.toggle('and-letra-cambiada', escala !== 1);
+        var posicion = ESCALAS.indexOf(escala);
+        piezas.subir.disabled = posicion === ESCALAS.length - 1;
+        piezas.bajar.disabled = posicion === 0;
+        if (!avisar) return;
+        var porcentaje = Math.round(escala * 100) + ' %';
+        piezas.panelNivel.style.height = Math.round(100 * (posicion + 1) / ESCALAS.length) + '%';
+        piezas.panelTexto.textContent = texto('textSize') + ': ' + porcentaje;
+        piezas.panel.classList.add('and-visible');
+        clearTimeout(piezas.temporizadorPanel);
+        piezas.temporizadorPanel = setTimeout(function () {
+            piezas.panel.classList.remove('and-visible');
+        }, 1800);
+    }
+
+    function cambiarLetra(paso) {
+        var posicion = ESCALAS.indexOf(escalaGuardada()) + paso;
+        posicion = Math.max(0, Math.min(ESCALAS.length - 1, posicion));
+        guardar(CLAVE_LETRA, String(ESCALAS[posicion]));
+        aplicarLetra(ESCALAS[posicion], true);
+    }
+
     function girar() {
         var horizontal = !raiz.classList.contains('and-horizontal');
         var aplicar = function () {
             raiz.classList.toggle('and-horizontal', horizontal);
-            try {
-                localStorage.setItem(CLAVE_ORIENTACION, horizontal ? 'horizontal' : 'vertical');
-            } catch (error) { /* Sin almacenamiento, no se recuerda. */ }
+            guardar(CLAVE_ORIENTACION, horizontal ? 'horizontal' : 'vertical');
         };
         // Como un móvil de verdad: el cuerpo gira y luego la pantalla se recoloca.
         if (reducido.matches) return aplicar();
@@ -401,6 +473,12 @@
             }
         });
         piezas.girar.addEventListener('click', girar);
+        piezas.subir.addEventListener('click', function () {
+            cambiarLetra(1);
+        });
+        piezas.bajar.addEventListener('click', function () {
+            cambiarLetra(-1);
+        });
         piezas.encendido.addEventListener('click', function () {
             apagar(!piezas.movil.classList.contains('and-apagado'));
         });
@@ -436,6 +514,9 @@
         construirNavegacion(pantalla, contenido, nav);
         construirCajon(pantalla, nav, principal);
         construirMovil(pantalla);
+        pintarProgreso(contarVistas(nav));
+        // La letra se aplica también en un móvil de verdad, aunque allí no haya botones.
+        aplicarLetra(escalaGuardada(), false);
         abrirCajon(false);
         escuchar();
         marcarDesplazables();

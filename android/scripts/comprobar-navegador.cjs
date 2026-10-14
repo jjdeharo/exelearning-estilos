@@ -54,6 +54,9 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
                 .catch(() => { throw new Error(`LaTeX sin dibujar en ${pagina.url()}`); });
         }
         assert.deepEqual(visitadas, urls, '«Siguiente» recorre todas las páginas en orden');
+        // La batería es el progreso: vistas todas las páginas, al 100 % y con el rayo.
+        assert.equal(await pagina.locator('.and-porcentaje').innerText(), '100 %', 'Batería llena al verlo todo');
+        assert.match(await pagina.locator('.and-progreso').getAttribute('title'), /13 de 13/);
         assert.equal(await pagina.locator('.and-siguiente').getAttribute('aria-disabled'), 'true', 'Nada después de la última');
         await pulsar('a.and-anterior');
         assert.equal(pagina.url(), urls.at(-2), '«Anterior» vuelve atrás');
@@ -109,6 +112,16 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
         await pagina.locator('.and-encendido').click();
         await pagina.locator('.and-encendido').click();
         await pagina.locator('.and-reposo').waitFor({ state: 'hidden' });
+
+        // Los botones de volumen cambian el tamaño de la letra, con su panel, y se recuerda.
+        await pagina.locator('.and-subir').click();
+        await pagina.locator('.and-panel-letra.and-visible').waitFor();
+        assert.match(await pagina.locator('.and-panel-texto').innerText(), /115 %/);
+        assert.equal(await pagina.locator('.and-contenido').evaluate(nodo => nodo.style.getPropertyValue('--and-escala')), '1.15');
+        await abrir(urls[2]);
+        assert.equal(await pagina.locator('.and-contenido').evaluate(nodo => nodo.style.getPropertyValue('--and-escala')), '1.15', 'El tamaño de letra se recuerda');
+        await pagina.locator('.and-bajar').click();
+        assert.equal(await pagina.locator('.and-contenido').evaluate(nodo => nodo.style.getPropertyValue('--and-escala')), '1');
 
         // El wifi refleja la conexión del dispositivo.
         await contexto.setOffline(true);
@@ -193,7 +206,7 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
         assert.equal(await pagina.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'Cabe en un móvil en horizontal');
         assert.equal(await pagina.locator('.and-movil').evaluate(movil => getComputedStyle(movil).display), 'contents', 'Sin marco en un móvil en horizontal');
         assert.deepEqual(errores, [], errores.join('\n'));
-        console.log(`CORRECTO (${process.argv[3] || 'chromium'}): ${urls.length} páginas, móvil dibujado, barra de navegación, índice, búsqueda, giro, encendido, wifi, soluciones, ordenar, test, MathJax y móvil de 412, 360 y 320 px.`);
+        console.log(`CORRECTO (${process.argv[3] || 'chromium'}): ${urls.length} páginas, móvil dibujado, barra de navegación, índice, búsqueda, giro, encendido, volumen, batería, wifi, soluciones, ordenar, test, MathJax y móvil de 412, 360 y 320 px.`);
     } finally {
         await navegador.close();
     }
