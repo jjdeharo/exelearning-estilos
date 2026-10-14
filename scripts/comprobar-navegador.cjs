@@ -63,8 +63,44 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
 
         // La ruta del prompt sigue el árbol.
         await abrir(urls[3]);
-        assert.equal(await pagina.locator('.page-header .cli-prompt').innerText(), 'aula@exe:~/ecuaciones-de-segundo-grado/ecuaciones-incompletas$ cat sin-termino-en-x.md');
+        assert.equal(await pagina.locator('.page-header .cli-prompt').innerText(), 'aula@exe:~/ecuaciones-de-segundo-grado/ecuaciones-incompletas$ cat sin-termino-en-x.md', 'Una página sin subpáginas es un archivo de la carpeta de su madre');
         assert.equal(await pagina.locator('.box.cli-fail .box-title').evaluate(titulo => getComputedStyle(titulo, '::before').content), '"[FAILED] "', 'Etiqueta de systemd');
+
+        // La terminal: help, ls, errores, tabulador, cd y grep.
+        await abrir(urls.find(url => url.endsWith('ecuaciones-completas.html')));
+        assert.equal(await pagina.locator('.page-header .cli-prompt').innerText(), 'aula@exe:~/ecuaciones-de-segundo-grado/ecuaciones-completas$ cat README.md', 'Una página con subpáginas es una carpeta');
+        const campo = pagina.locator('.cli-campo');
+        const orden = async texto => { await campo.fill(texto); await campo.press('Enter'); };
+        await orden('help');
+        assert.match(await pagina.locator('.cli-salida').innerText(), /grep PALABRA/);
+        await orden('ls');
+        assert.deepEqual(await pagina.locator('.cli-ls a').allTextContents(), ['README.md', 'la-formula-general.md', 'el-discriminante.md']);
+        await orden('vim');
+        assert.match(await pagina.locator('.cli-error').last().innerText(), /vim: orden no encontrada/);
+        await orden('cd nada');
+        assert.match(await pagina.locator('.cli-error').last().innerText(), /No existe el archivo o el directorio/);
+        await campo.fill('cd el-d');
+        await campo.press('Tab');
+        assert.equal(await campo.inputValue(), 'cd el-discriminante.md', 'El tabulador completa la página');
+        await campo.fill('');
+        await campo.press('Tab');
+        assert.equal(await pagina.evaluate(() => document.activeElement.classList.contains('cli-campo')), false, 'Con la línea vacía, el tabulador pasa al siguiente control');
+        await orden('grep discriminante');
+        assert.equal(await pagina.locator('main .page-content').isVisible(), false, 'grep muestra los resultados del buscador');
+        assert.ok(await pagina.locator('#exe-client-search-results-list li').count() > 0);
+        await pagina.locator('.cli-volver').click();
+        assert.equal(await pagina.locator('main .page-content').isVisible(), true, '«Volver a la página» la vuelve a mostrar');
+        await Promise.all([pagina.waitForURL(urls.find(url => url.endsWith('el-discriminante.html'))), orden('cd el-discriminante')]);
+        await lista();
+        // Como en bash: desde un archivo de ecuaciones-completas/, «..» es la carpeta del recurso.
+        await Promise.all([pagina.waitForURL(urls.find(url => url.endsWith('test.html'))), orden('cd ../actividades/test')]);
+        await lista();
+        await Promise.all([pagina.waitForURL(urls[0]), orden('cd ..')]);
+        await lista();
+        await Promise.all([pagina.waitForURL(urls.find(url => url.endsWith('ecuaciones-completas.html'))), orden('cd ecuaciones-completas')]);
+        await lista();
+        await Promise.all([pagina.waitForURL(urls[0]), orden('cd')]);
+        await lista();
 
         // «Ver solución» despliega la resolución y cambia de rótulo.
         await abrir(urls.find(url => url.endsWith('ejercicios-resueltos.html')));
@@ -137,7 +173,7 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
             assert.equal(await pagina.evaluate(() => document.activeElement.classList.contains('cli-indice')), true, 'El foco vuelve al botón');
         }
         assert.deepEqual(errores, [], errores.join('\n'));
-        console.log(`CORRECTO (${process.argv[3] || 'chromium'}): ${urls.length} páginas, árbol, prompt, barra de estado, soluciones, ordenar, test y móvil a 390 y 320 px.`);
+        console.log(`CORRECTO (${process.argv[3] || 'chromium'}): ${urls.length} páginas, árbol, prompt, barra de estado, terminal, soluciones, ordenar, test y móvil a 390 y 320 px.`);
     } finally {
         await navegador.close();
     }

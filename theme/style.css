@@ -947,8 +947,107 @@ body#tinymce pre {
     color: var(--cli-brillante);
 }
 
+/* La terminal del final de la página: salida de las órdenes y línea para escribirlas. */
+.cli-terminal {
+    margin-top: 1.5rem;
+}
+
+.exe-content .cli-salida-linea {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.exe-content .cli-error {
+    color: var(--cli-rojo-texto);
+}
+
+.exe-content .cli-ls a {
+    margin-right: 2ch;
+    text-decoration: none;
+}
+
+/* Como «ls --color»: carpetas en azul y negrita, archivos en el color del texto. */
+.exe-content .cli-ls-carpeta {
+    color: var(--cli-azul);
+    font-weight: 700;
+}
+
+.exe-content .cli-ls-archivo {
+    color: var(--cli-texto);
+}
+
+/* «Volver a la página» tras grep: un enlace de la salida, no un botón enmarcado. */
+.exe-content .cli-salida .cli-volver {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--cli-azul);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.exe-content .cli-salida .cli-volver:disabled {
+    color: var(--cli-apagado);
+    text-decoration: none;
+    cursor: default;
+}
+
+.exe-content .cli-ls a:hover {
+    text-decoration: underline;
+}
+
 .exe-content .cli-espera {
-    margin: 1.5rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    margin: 0;
+    cursor: text;
+}
+
+.exe-content .cli-espera:focus-within {
+    background: var(--cli-fondo-panel);
+    box-shadow: 0 0 0 .25rem var(--cli-fondo-panel);
+}
+
+.exe-content .cli-prompt-texto {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.cli-entrada {
+    position: relative;
+    display: inline-flex;
+    flex: 1 1 10ch;
+    min-width: 10ch;
+}
+
+.exe-content .cli-espera .cli-campo {
+    width: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--cli-brillante);
+    font: inherit;
+    caret-color: var(--cli-verde);
+    outline: none;
+}
+
+.cli-entrada .cli-cursor {
+    position: absolute;
+    top: .15em;
+    left: 0;
+    pointer-events: none;
+}
+
+/* El cursor de bloque solo con la línea vacía y sin el foco; con el foco parpadea el del campo. */
+.cli-entrada:focus-within .cli-cursor,
+.cli-entrada:has(.cli-campo:not(:placeholder-shown)) .cli-cursor {
+    display: none;
 }
 
 .cli-cursor {
@@ -1327,6 +1426,7 @@ button.cli-tecla:hover {
     }
 
     #skipNav,
+    .cli-terminal,
     .exe-content .iDevice_buttons,
     .cli-barra,
     .cli-arbol,

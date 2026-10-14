@@ -93,6 +93,7 @@ PAGINAS = [
 <li>El índice de la izquierda muestra las páginas como las carpetas y los archivos de la orden <code>tree</code>. En el móvil se abre con el botón «Índice» de la barra inferior.</li>
 <li>La barra verde lleva a la página anterior y a la siguiente.</li>
 <li>Los botones «Ver solución» de los ejercicios muestran la resolución completa.</li>
+<li>Al final de cada página hay un prompt en el que se pueden escribir órdenes, como en una terminal: <code>ls</code> lista las páginas, <code>cd</code> abre una, <code>grep</code> busca una palabra y <code>help</code> explica todo esto. El tabulador completa los nombres.</li>
 </ul>""", clase="cli-info"),
         ],
     },

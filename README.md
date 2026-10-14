@@ -18,7 +18,17 @@ El ejemplo que lo acompaña, **«Ecuaciones de segundo grado»**, tiene 13 pági
 
 - **Ventana de terminal.** En pantallas anchas, una ventana sobre el escritorio, con el título del recurso en la barra de título. En el móvil ocupa toda la pantalla.
 - **El índice como `tree`.** Las páginas aparecen con las ramas de la orden `tree` (`├──`, `└──`, `│`), y la abierta, en vídeo inverso. Debajo está el buscador del recurso. En el móvil, el índice se abre con el botón «Índice» de la barra inferior y se cierra con Escape.
-- **El prompt de bash.** Cada página empieza con `aula@exe:~/recurso/carpeta$ cat página.md`, con la ruta que le corresponde en el árbol, y termina con el prompt y el cursor parpadeando, a la espera de la siguiente orden.
+- **El prompt de bash.** Cada página empieza con `aula@exe:~/recurso/carpeta$ cat página.md`, con la ruta que le corresponde en el árbol. Una página con subpáginas es una carpeta, y su contenido, el `README.md` de esa carpeta.
+- **Una terminal que funciona.** Al final de cada página, el prompt espera una orden:
+
+  | Orden | Qué hace |
+  |---|---|
+  | `ls` | lista las páginas de la carpeta, con enlaces: las carpetas en azul y con `/` |
+  | `cd PÁGINA` | abre una página; admite rutas (`cd ../actividades/test`), `cd ..` sube un nivel y `cd` vuelve al inicio |
+  | `grep PALABRA` | busca en todo el recurso con el buscador de eXeLearning |
+  | `help` | explica las órdenes |
+
+  El tabulador completa el nombre de una orden o de una página; con la línea vacía, pasa al siguiente control, como en el resto de la página. Las respuestas se anuncian a los lectores de pantalla.
 - **La barra de `tmux`.** Verde con texto negro: la sesión, «Anterior», «Índice», «Siguiente», el número de página y la hora.
 - **Cajas.** Las de texto llevan el título en verde; las actividades se enmarcan con doble línea, como una ventana de `dialog`. Los botones son texto verde enmarcado, como `[ Comprobar ]`.
 - **Sin JavaScript o al imprimir**, el contenido se lee como una página normal. Al imprimir, en tinta oscura sobre papel blanco.
