@@ -31,7 +31,7 @@ El ejemplo que lo acompaña, **«Ecuaciones de segundo grado»**, tiene 13 pági
   | `clear` | borra la terminal |
   | `help` | explica las órdenes; `help ORDEN` u `ORDEN --help`, cómo se usa cada una |
 
-  `plot` y `calc` se escriben como en la calculadora: `x^2` (o `x**2`), `2x`, `sqrt`, `abs`, `sin`, `cos`, `tan`, `ln`, `log` (decimal), `exp` y `pi`. Las flechas ↑ y ↓ recuperan las órdenes anteriores, también tras cambiar de página. El tabulador completa el nombre de una orden o de una página; con la línea vacía, pasa al siguiente control, como en el resto de la página. Las respuestas se anuncian a los lectores de pantalla.
+  `plot` y `calc` se escriben como en la calculadora: `x^2` (o `x**2`), `2x`, `sqrt`, `abs`, `sin`, `cos`, `tan`, `ln`, `log` (decimal), `exp` y `pi`. Basta con empezar a escribir: si el cursor no está en un campo, lo tecleado va al prompt. Las flechas ↑ y ↓ recuperan las órdenes anteriores, también tras cambiar de página. El tabulador completa el nombre de una orden o de una página; con la línea vacía, pasa al siguiente control, como en el resto de la página. Las respuestas se anuncian a los lectores de pantalla.
 - **La barra de `tmux`.** Verde con texto negro: la sesión, «Anterior», «Índice», «Siguiente», el número de página y la hora.
 - **Cajas.** Las de texto llevan el título en verde; las actividades se enmarcan con doble línea, como una ventana de `dialog`. Los botones son texto verde enmarcado, como `[ Comprobar ]`.
 - **Sin JavaScript o al imprimir**, el contenido se lee como una página normal. Al imprimir, en tinta oscura sobre papel blanco.

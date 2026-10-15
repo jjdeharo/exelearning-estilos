@@ -111,6 +111,17 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
         await campo.press('ArrowDown');
         await campo.press('ArrowDown');
         assert.equal(await campo.inputValue(), '', '↓ vuelve a la línea vacía');
+        // Con el foco fuera de los campos, lo que se escribe va al prompt.
+        await campo.fill('');
+        await pagina.locator('.page-title').click();
+        await pagina.keyboard.type('ls');
+        assert.equal(await campo.inputValue(), 'ls', 'Lo que se teclea fuera de un campo va al prompt');
+        assert.equal(await pagina.evaluate(() => document.activeElement.classList.contains('cli-campo')), true, 'El foco pasa al prompt');
+        await pagina.locator('#exe-client-search-text').fill('');
+        await pagina.locator('#exe-client-search-text').pressSequentially('raiz');
+        assert.equal(await pagina.locator('#exe-client-search-text').inputValue(), 'raiz', 'En el buscador se escribe en el buscador');
+        assert.equal(await campo.inputValue(), 'ls', 'El buscador no manda nada al prompt');
+        await pagina.locator('#exe-client-search-text').fill('');
         await orden('clear');
         assert.equal(await pagina.locator('.cli-salida').innerText(), '', 'clear borra la terminal');
         await orden('grep discriminante');

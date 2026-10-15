@@ -1349,6 +1349,25 @@
             mostrarArbol(false);
         });
         document.addEventListener('keydown', desplazarVentana);
+        document.addEventListener('keydown', escribirEnTerminal);
+    }
+
+    // Como en una terminal, basta con empezar a escribir: si el foco no está en un campo
+    // (el buscador, las respuestas de las actividades), lo que se teclea va al prompt.
+    // El espacio no, porque desplaza la página.
+    function escribirEnTerminal(evento) {
+        var campo = piezas.campo;
+        if (!campo || evento.defaultPrevented || evento.isComposing) return;
+        if (evento.ctrlKey || evento.metaKey || evento.altKey) return;
+        if (evento.key.length !== 1 || evento.key === ' ') return;
+        var foco = document.activeElement;
+        if (foco && (foco.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))) return;
+        if (document.body.classList.contains('cli-arbol-abierto')) mostrarArbol(false);
+        evento.preventDefault();
+        campo.focus();
+        campo.value += evento.key;
+        campo.setSelectionRange(campo.value.length, campo.value.length);
+        campo.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     // Con la ventana fija, la pestaña no se desplaza: si el foco no está en ningún control,
