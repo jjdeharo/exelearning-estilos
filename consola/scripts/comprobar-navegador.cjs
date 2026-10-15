@@ -85,6 +85,34 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
         await campo.fill('');
         await campo.press('Tab');
         assert.equal(await pagina.evaluate(() => document.activeElement.classList.contains('cli-campo')), false, 'Con la línea vacía, el tabulador pasa al siguiente control');
+        // plot, calc, la ayuda de cada orden, el historial y clear.
+        await orden('plot [-2:4] x^2-2x-3');
+        assert.match(await pagina.locator('.cli-grafica').last().innerText(), /\*/, 'plot dibuja la curva');
+        assert.equal(await pagina.locator('.cli-grafica .cli-corte').count(), 2, 'plot marca los dos cortes');
+        assert.equal(await pagina.locator('.cli-comentario').last().innerText(), '# corta el eje X en x = -1 y x = 3');
+        await orden('plot [-3:3] x^3-2x');
+        assert.equal(await pagina.locator('.cli-comentario').last().innerText(), '# corta el eje X en x ≈ -1.414, x = 0 y x ≈ 1.414');
+        await orden('calc 3^2-2*3-3');
+        assert.equal(await pagina.locator('.cli-salida-linea').last().innerText(), '0');
+        await orden('calc 2*(1+0.5)^2');
+        assert.equal(await pagina.locator('.cli-salida-linea').last().innerText(), '4.5');
+        await orden('calc sqrt(-4)');
+        assert.match(await pagina.locator('.cli-error').last().innerText(), /no es un número real/);
+        await orden('calc 2 $ 3');
+        assert.match(await pagina.locator('.cli-error').last().innerText(), /no se entiende «\$»/);
+        await orden('plot --help');
+        assert.match(await pagina.locator('.cli-salida').innerText(), /Uso: plot \[INTERVALO\] FUNCIÓN/);
+        await orden('help calc');
+        assert.match(await pagina.locator('.cli-salida').innerText(), /Uso: calc EXPRESIÓN/);
+        await campo.press('ArrowUp');
+        assert.equal(await campo.inputValue(), 'help calc', '↑ recupera la orden anterior');
+        await campo.press('ArrowUp');
+        assert.equal(await campo.inputValue(), 'plot --help');
+        await campo.press('ArrowDown');
+        await campo.press('ArrowDown');
+        assert.equal(await campo.inputValue(), '', '↓ vuelve a la línea vacía');
+        await orden('clear');
+        assert.equal(await pagina.locator('.cli-salida').innerText(), '', 'clear borra la terminal');
         await orden('grep discriminante');
         assert.equal(await pagina.locator('main .page-content').isVisible(), false, 'grep muestra los resultados del buscador');
         assert.ok(await pagina.locator('#exe-client-search-results-list li').count() > 0);
@@ -173,7 +201,7 @@ const TEST = [['1'], [0], [0], [0], ['0'], [0], [1], [0], [0, 2], ['1']];
             assert.equal(await pagina.evaluate(() => document.activeElement.classList.contains('cli-indice')), true, 'El foco vuelve al botón');
         }
         assert.deepEqual(errores, [], errores.join('\n'));
-        console.log(`CORRECTO (${process.argv[3] || 'chromium'}): ${urls.length} páginas, árbol, prompt, barra de estado, terminal, soluciones, ordenar, test y móvil a 390 y 320 px.`);
+        console.log(`CORRECTO (${process.argv[3] || 'chromium'}): ${urls.length} páginas, árbol, prompt, barra de estado, terminal (plot, calc, clear, historial), soluciones, ordenar, test y móvil a 390 y 320 px.`);
     } finally {
         await navegador.close();
     }

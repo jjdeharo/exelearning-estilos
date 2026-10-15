@@ -6,7 +6,7 @@ Estilos para [eXeLearning](https://exelearning.net/) 4.0.5 o posterior, de Juan 
 
 | Estilo | Qué es | Ejemplo |
 |---|---|---|
-| [Consola](consola/) | El recurso como una terminal de Linux: `tree`, el prompt de bash, la barra de `tmux` y una línea de órdenes con `ls`, `cd`, `grep` y `help` | [Ecuaciones de segundo grado](https://jjdeharo.github.io/exelearning-estilos/consola/) |
+| [Consola](consola/) | El recurso como una terminal de Linux: `tree`, el prompt de bash, la barra de `tmux` y una línea de órdenes con `ls`, `cd`, `grep`, `plot` (gráficas con caracteres), `calc`, `clear` y `help` | [Ecuaciones de segundo grado](https://jjdeharo.github.io/exelearning-estilos/consola/) |
 | [Android](android/) | El recurso como una aplicación en un móvil Android, con Material Design 3; en el ordenador, el móvil se gira entre vertical y horizontal | [Ecuaciones de segundo grado](https://jjdeharo.github.io/exelearning-estilos/android/) |
 
 ## Cómo usar un estilo

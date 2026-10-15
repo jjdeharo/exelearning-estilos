@@ -121,7 +121,7 @@ def paginas(estilo):
 <figcaption>gnuplot: y = x^2 - 2x - 3, dibujada con caracteres</figcaption></figure>
 <p>Se comprueba sustituyendo:</p>
 <p>\[ (-1)^2 - 2\cdot(-1) - 3 = 1 + 2 - 3 = 0 \]</p>
-<p>\[ 3^2 - 2\cdot 3 - 3 = 9 - 6 - 3 = 0 \]</p>"""),
+<p>\[ 3^2 - 2\cdot 3 - 3 = 9 - 6 - 3 = 0 \]</p>""" + getattr(estilo, "PISTA_GRAFICA", "")),
         ],
     },
     {

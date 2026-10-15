@@ -945,6 +945,36 @@ body#tinymce pre {
     color: var(--cli-rojo-texto);
 }
 
+/* Lo que dice plot debajo de la gráfica, como un comentario de la shell. */
+.exe-content .cli-comentario {
+    color: var(--cli-apagado);
+}
+
+/* La gráfica de plot: texto sin marco, con la curva en verde y los cortes en amarillo. */
+.exe-content .cli-salida pre.cli-grafica {
+    overflow-x: auto;
+    margin: .25em 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 1em;
+    line-height: 1.2;
+}
+
+.cli-grafica .cli-eje,
+.cli-grafica .cli-grafica-rotulo {
+    color: var(--cli-apagado);
+}
+
+.cli-grafica .cli-curva {
+    color: var(--cli-verde);
+}
+
+.cli-grafica .cli-corte {
+    color: var(--cli-amarillo);
+    font-weight: 700;
+}
+
 .exe-content .cli-ls a {
     margin-right: 2ch;
     text-decoration: none;
@@ -1191,11 +1221,15 @@ body#tinymce pre {
     color: #000;
 }
 
+/* Si no cabe todo, el nombre de la sesión se recorta, como en tmux. */
 .cli-sesion {
-    display: flex;
-    align-items: center;
+    flex: 0 1 auto;
+    align-self: center;
+    min-width: 4ch;
+    overflow: hidden;
     font-weight: 700;
     white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .cli-tecla {
@@ -1373,6 +1407,57 @@ button.cli-tecla:hover {
     .cli-pie {
         grid-area: pie;
         padding-inline: 0;
+    }
+}
+
+/* Con alto suficiente, la ventana tiene medidas fijas sobre el escritorio, con margen
+   alrededor, y se desplaza por dentro, como una de verdad: el árbol y la página cada uno
+   con su barra de desplazamiento; la pestaña del navegador no se mueve. */
+@media screen and (min-width: 60rem) and (min-height: 30rem) {
+    .cli-js body.exe-web-site {
+        box-sizing: border-box;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    .cli-js .exe-web-site .exe-content {
+        grid-template-rows: auto minmax(0, 1fr) auto auto;
+        height: 100%;
+        min-height: 0;
+        isolation: isolate;
+    }
+
+    /* El marco y la sombra de toda la ventana, detrás del título, el árbol, la página y la barra. */
+    .cli-js .exe-web-site .exe-content::before {
+        content: "";
+        grid-row: 1 / 4;
+        grid-column: 1 / -1;
+        z-index: -1;
+        border-radius: .5rem;
+        background: var(--cli-fondo);
+        box-shadow: 0 0 0 .0625rem #000, 0 .5rem 2rem rgba(0, 0, 0, .45);
+    }
+
+    .cli-titulo {
+        box-shadow: none;
+    }
+
+    .cli-arbol,
+    .cli-js .exe-web-site main.page {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-color: var(--cli-linea) var(--cli-fondo-oscuro);
+    }
+
+    .cli-barra {
+        position: static;
+        border-radius: 0 0 .5rem .5rem;
+    }
+
+    .cli-pie {
+        padding-block: .75rem 1rem;
     }
 }
 

@@ -22,8 +22,8 @@ En la primera versión, el prompt del final de cada página era solo decorativo.
 
 ## Alternativas descartadas
 
-- **Más órdenes** (`clear`, `history`, `cat`): no se pidieron.
-- **Atajos con las flechas o números de página**: chocarían con la escritura en el campo y con las actividades.
+- **Más órdenes** (`clear`, `history`, `cat`): no se pidieron. Después se añadieron `plot`, `calc`, `clear`, la ayuda de cada orden y el historial con las flechas: ver el ADR 8.
+- **Atajos con las flechas o números de página**: chocarían con la escritura en el campo y con las actividades. Dentro del campo, las flechas ↑↓ recorren ahora el historial, como en bash (ADR 8).
 - **Foco automático en el campo al cargar**: movería la página hasta el final y robaría el foco al lector de pantalla.
 
 ## Validación
